@@ -116,7 +116,8 @@ local autoSellEnabled = false
 -- Pet List to unlock & auto sell by name
 local autoSellPetsByName = {
 	["Cosmic Invader"] = true,
-	["Alien Slime"] = true
+	["Alien Slime"] = true,
+	["Shard Dragon"] = true
 }
 
 local function getPetsFolder()
