@@ -1,0 +1,407 @@
+-- ==========================================
+-- NATIVE SIMPLE UI & AUTO SELL + AUTO UNLOCK SCRIPT
+-- ==========================================
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local localPlayer = Players.LocalPlayer
+
+-- Remove old UI if it already exists
+if CoreGui:FindFirstChild("SimplePetGui") then
+	CoreGui.SimplePetGui:Destroy()
+end
+
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SimplePetGui"
+screenGui.Parent = CoreGui
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Parent = screenGui
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+mainFrame.BorderSizePixel = 0
+mainFrame.Position = UDim2.new(0.5, -110, 0.5, -85)
+mainFrame.Size = UDim2.new(0, 220, 0, 155)
+
+-- Make corners rounded
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 8)
+uiCorner.Parent = mainFrame
+
+-- Title Bar / Header
+local titleBar = Instance.new("TextLabel")
+titleBar.Name = "TitleBar"
+titleBar.Parent = mainFrame
+titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 52)
+titleBar.BorderSizePixel = 0
+titleBar.Size = UDim2.new(1, 0, 0, 35)
+titleBar.Font = Enum.Font.GothamBold
+titleBar.Text = "Pet Auto-Sell & Unlock"
+titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleBar.TextSize = 14
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
+
+-- Fix bottom corners of title bar so they stay square
+local titleFix = Instance.new("Frame")
+titleFix.Parent = titleBar
+titleFix.BackgroundColor3 = Color3.fromRGB(45, 45, 52)
+titleFix.BorderSizePixel = 0
+titleFix.Position = UDim2.new(0, 0, 1, -5)
+titleFix.Size = UDim2.new(1, 0, 0, 5)
+
+-- Auto Unlock Toggle Button (defaults to ON / true)
+local unlockButton = Instance.new("TextButton")
+unlockButton.Name = "UnlockButton"
+unlockButton.Parent = mainFrame
+unlockButton.BackgroundColor3 = Color3.fromRGB(40, 80, 50)
+unlockButton.BorderSizePixel = 0
+unlockButton.Position = UDim2.new(0, 15, 0, 46)
+unlockButton.Size = UDim2.new(0, 190, 0, 42)
+unlockButton.AutoButtonColor = false
+unlockButton.Font = Enum.Font.GothamMedium
+unlockButton.Text = "Auto Unlock: ON"
+unlockButton.TextColor3 = Color3.fromRGB(80, 255, 120)
+unlockButton.TextSize = 13
+
+local unlockBtnCorner = Instance.new("UICorner")
+unlockBtnCorner.CornerRadius = UDim.new(0, 6)
+unlockBtnCorner.Parent = unlockButton
+
+-- Auto Sell Toggle Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Parent = mainFrame
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+toggleButton.BorderSizePixel = 0
+toggleButton.Position = UDim2.new(0, 15, 0, 98)
+toggleButton.Size = UDim2.new(0, 190, 0, 42)
+toggleButton.AutoButtonColor = false
+toggleButton.Font = Enum.Font.GothamMedium
+toggleButton.Text = "Auto Sell: OFF"
+toggleButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+toggleButton.TextSize = 13
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 6)
+btnCorner.Parent = toggleButton
+
+-- ==========================================
+-- DRAGGABLE WINDOW LOGIC
+-- ==========================================
+local dragging, dragInput, dragStart, startPos
+
+titleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = mainFrame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - dragStart
+		mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+-- ==========================================
+-- CONFIGURATION & STATE
+-- ==========================================
+local autoUnlockPets = true
+local autoSellEnabled = false
+
+-- Pets to unlock & auto-sell by name
+local autoSellPetsByName = {
+	["Shard Dragon"] = true,
+	["Cosmic Invader"] = true,
+	["Alien Slime"] = true
+}
+
+-- Captured lock remote data from clicking LOCK in-game
+local capturedLockRemote = nil
+local capturedLockMethod = nil
+local capturedLockArgs = nil
+
+local function describeArg(v)
+	local t = typeof(v)
+	if t == "Instance" then
+		return string.format("%s (%s)", v.Name, v:GetFullName())
+	elseif t == "string" then
+		return string.format("%q", v)
+	else
+		return tostring(v)
+	end
+end
+
+-- Built-in spy to log & capture what remote fires when you click LOCK in-game
+task.spawn(function()
+	if typeof(hookmetamethod) ~= "function" or typeof(getnamecallmethod) ~= "function" then
+		warn("[PetUnlockSpy] hookmetamethod/getnamecallmethod not available in this executor.")
+		return
+	end
+
+	local oldNamecall
+	oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+		local method = getnamecallmethod()
+		if (method == "FireServer" or method == "InvokeServer") and (typeof(self) == "Instance") and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
+			local args = { ... }
+			local lowerRemote = string.lower(self.Name)
+			local hasLockArg = false
+			for _, a in ipairs(args) do
+				if type(a) == "string" and string.find(string.lower(a), "lock") then
+					hasLockArg = true
+					break
+				end
+			end
+
+			if string.find(lowerRemote, "lock") or hasLockArg then
+				capturedLockRemote = self
+				capturedLockMethod = method
+				capturedLockArgs = args
+
+				local formatted = {}
+				for i, a in ipairs(args) do
+					formatted[i] = string.format("[%d] %s", i, describeArg(a))
+				end
+				print(string.format("[PetUnlockSpy] %s:%s(%s)", self:GetFullName(), method, table.concat(formatted, ", ")))
+			end
+		end
+		return oldNamecall(self, ...)
+	end)
+end)
+
+local function getPetsFolder()
+	local p = Players.LocalPlayer
+	return p and (p:FindFirstChild("petsFolder") or p:FindFirstChild("PetsFolder") or p:FindFirstChild("Pets"))
+end
+
+local function getREvents()
+	return ReplicatedStorage:FindFirstChild("rEvents") or ReplicatedStorage:FindFirstChild("remotes")
+end
+
+local function getSellEvent(rEvents)
+	if not rEvents then return nil end
+	return rEvents:FindFirstChild("sellPetEvent")
+		or rEvents:FindFirstChild("SellPetEvent")
+		or rEvents:FindFirstChild("sellPet")
+		or rEvents:FindFirstChild("SellPet")
+end
+
+local function isPetLocked(pet)
+	if not pet then return false end
+
+	for _, child in ipairs(pet:GetDescendants()) do
+		if child:IsA("BoolValue") and string.find(string.lower(child.Name), "lock") then
+			return child.Value == true
+		end
+	end
+
+	for attrName, attrVal in pairs(pet:GetAttributes()) do
+		if type(attrVal) == "boolean" and string.find(string.lower(attrName), "lock") then
+			return attrVal
+		end
+	end
+
+	return false
+end
+
+local function sendToRemote(remote, methodHint, ...)
+	local args = { ... }
+	pcall(function()
+		if remote:IsA("RemoteFunction") or methodHint == "InvokeServer" then
+			remote:InvokeServer(unpack(args))
+		elseif remote:IsA("RemoteEvent") or methodHint == "FireServer" then
+			remote:FireServer(unpack(args))
+		end
+	end)
+end
+
+-- Unlocks a single pet using the captured lock remote if available, or common lock remotes
+local function UnlockPets(pet)
+	if not pet or not isPetLocked(pet) then
+		return false
+	end
+
+	-- 1. Use captured remote/args from clicking LOCK in-game (replacing Instance args with this pet)
+	if capturedLockRemote and capturedLockRemote.Parent then
+		local replayArgs = {}
+		local replacedInstance = false
+		if capturedLockArgs and #capturedLockArgs > 0 then
+			for i, a in ipairs(capturedLockArgs) do
+				if typeof(a) == "Instance" and not replacedInstance then
+					replayArgs[i] = pet
+					replacedInstance = true
+				else
+					replayArgs[i] = a
+				end
+			end
+			if not replacedInstance then
+				table.insert(replayArgs, pet)
+			end
+			sendToRemote(capturedLockRemote, capturedLockMethod, unpack(replayArgs))
+		else
+			sendToRemote(capturedLockRemote, capturedLockMethod, pet)
+		end
+		task.wait(0.08)
+		if not isPetLocked(pet) then
+			return true
+		end
+	end
+
+	-- 2. Fallback across remotes with "lock" in their name
+	local rEvents = getREvents()
+	local roots = {}
+	if rEvents then table.insert(roots, rEvents) end
+	table.insert(roots, ReplicatedStorage)
+
+	for _, root in ipairs(roots) do
+		for _, obj in ipairs(root:GetDescendants()) do
+			if (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) and string.find(string.lower(obj.Name), "lock") then
+				sendToRemote(obj, nil, pet)
+				sendToRemote(obj, nil, "lockPet", pet)
+				sendToRemote(obj, nil, pet, false)
+			end
+		end
+	end
+
+	task.wait(0.08)
+	return not isPetLocked(pet)
+end
+
+local function getMatchingPetsByName()
+	local matches = {}
+	local petsFolder = getPetsFolder()
+	if not petsFolder then return matches end
+
+	for _, item in ipairs(petsFolder:GetChildren()) do
+		if item:IsA("Folder") then
+			for _, pet in ipairs(item:GetChildren()) do
+				if autoSellPetsByName[pet.Name] == true then
+					table.insert(matches, pet)
+				end
+			end
+		else
+			if autoSellPetsByName[item.Name] == true then
+				table.insert(matches, item)
+			end
+		end
+	end
+
+	return matches
+end
+
+local function UnlockMultiplePetsByName()
+	local matchingPets = getMatchingPetsByName()
+	for _, pet in ipairs(matchingPets) do
+		if not autoUnlockPets and not autoSellEnabled then
+			break
+		end
+		if pet and pet.Parent and isPetLocked(pet) then
+			UnlockPets(pet)
+			task.wait(0.05)
+		end
+	end
+end
+
+local function sellPet(pet, sellEvent)
+	if not pet or not sellEvent then return end
+	pcall(function()
+		if sellEvent:IsA("RemoteFunction") then
+			sellEvent:InvokeServer("sellPet", pet)
+		else
+			sellEvent:FireServer("sellPet", pet)
+		end
+	end)
+end
+
+local function setButtonVisual(button, isOn, onText, offText)
+	if isOn then
+		button.Text = onText
+		button.TextColor3 = Color3.fromRGB(80, 255, 120)
+		TweenService:Create(button, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(40, 80, 50) }):Play()
+	else
+		button.Text = offText
+		button.TextColor3 = Color3.fromRGB(200, 200, 200)
+		TweenService:Create(button, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(50, 50, 60) }):Play()
+	end
+end
+
+unlockButton.MouseButton1Click:Connect(function()
+	autoUnlockPets = not autoUnlockPets
+	setButtonVisual(unlockButton, autoUnlockPets, "Auto Unlock: ON", "Auto Unlock: OFF")
+
+	if autoUnlockPets then
+		task.spawn(UnlockMultiplePetsByName)
+	end
+end)
+
+toggleButton.MouseButton1Click:Connect(function()
+	autoSellEnabled = not autoSellEnabled
+	setButtonVisual(toggleButton, autoSellEnabled, "Auto Sell: ON", "Auto Sell: OFF")
+
+	if autoSellEnabled and not autoUnlockPets then
+		autoUnlockPets = true
+		setButtonVisual(unlockButton, true, "Auto Unlock: ON", "Auto Unlock: OFF")
+	end
+
+	if autoSellEnabled then
+		task.spawn(UnlockMultiplePetsByName)
+	end
+end)
+
+task.spawn(UnlockMultiplePetsByName)
+
+task.spawn(function()
+	while true do
+		if autoUnlockPets or autoSellEnabled then
+			pcall(function()
+				local rEvents = getREvents()
+				local sellEvent = getSellEvent(rEvents)
+				local matchingPets = getMatchingPetsByName()
+
+				if autoUnlockPets or autoSellEnabled then
+					for _, pet in ipairs(matchingPets) do
+						if not autoUnlockPets and not autoSellEnabled then break end
+						if pet and pet.Parent and isPetLocked(pet) then
+							UnlockPets(pet)
+							task.wait(0.05)
+						end
+					end
+				end
+
+				if autoSellEnabled and sellEvent then
+					for _, pet in ipairs(matchingPets) do
+						if not autoSellEnabled then break end
+						if pet and pet.Parent and not isPetLocked(pet) then
+							sellPet(pet, sellEvent)
+							task.wait(0.08)
+						end
+					end
+				end
+			end)
+		end
+		task.wait(0.35)
+	end
+end)
