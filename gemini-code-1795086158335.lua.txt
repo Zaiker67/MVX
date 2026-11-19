@@ -1,0 +1,322 @@
+-- ==========================================
+-- NATIVE SIMPLE UI & AUTO SELL SCRIPT
+-- ==========================================
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local localPlayer = Players.LocalPlayer
+
+-- Remove old UI if it already exists
+if CoreGui:FindFirstChild("SimplePetGui") then
+	CoreGui.SimplePetGui:Destroy()
+end
+
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SimplePetGui"
+screenGui.Parent = CoreGui
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Parent = screenGui
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+mainFrame.BorderSizePixel = 0
+mainFrame.Position = UDim2.new(0.5, -110, 0.5, -60)
+mainFrame.Size = UDim2.new(0, 220, 0, 110)
+
+-- Make corners rounded
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 8)
+uiCorner.Parent = mainFrame
+
+-- Title Bar / Header
+local titleBar = Instance.new("TextLabel")
+titleBar.Name = "TitleBar"
+titleBar.Parent = mainFrame
+titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 52)
+titleBar.BorderSizePixel = 0
+titleBar.Size = UDim2.new(1, 0, 0, 35)
+titleBar.Font = Enum.Font.GothamBold
+titleBar.Text = "Pet Auto-Sell UI"
+titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleBar.TextSize = 14
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
+
+-- Fix bottom corners of title bar so they stay square
+local titleFix = Instance.new("Frame")
+titleFix.Parent = titleBar
+titleFix.BackgroundColor3 = Color3.fromRGB(45, 45, 52)
+titleFix.BorderSizePixel = 0
+titleFix.Position = UDim2.new(0, 0, 1, -5)
+titleFix.Size = UDim2.new(1, 0, 0, 5)
+
+-- Toggle Button Container
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Parent = mainFrame
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+toggleButton.BorderSizePixel = 0
+toggleButton.Position = UDim2.new(0, 15, 0, 52)
+toggleButton.Size = UDim2.new(0, 190, 0, 42)
+toggleButton.AutoButtonColor = false
+toggleButton.Font = Enum.Font.GothamMedium
+toggleButton.Text = "Auto Sell: OFF"
+toggleButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+toggleButton.TextSize = 13
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 6)
+btnCorner.Parent = toggleButton
+
+-- ==========================================
+-- DRAGGABLE WINDOW LOGIC
+-- ==========================================
+local dragging, dragInput, dragStart, startPos
+
+titleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = mainFrame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - dragStart
+		mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+-- ==========================================
+-- AUTO SELL & UNLOCK LOGIC
+-- ==========================================
+local autoSellEnabled = false
+
+-- Ilagay dito ang eksaktong pangalan ng mga pet na gusto mong i-unlock at i-auto sell
+local autoSellPetsByName = {
+	["Shard Dragon"] = true,
+	["Cosmic Invader"] = true,
+	["Alien Slime"] = true
+}
+
+local function getPetsFolder()
+	local p = Players.LocalPlayer
+	return p and (p:FindFirstChild("petsFolder") or p:FindFirstChild("PetsFolder") or p:FindFirstChild("Pets"))
+end
+
+local function getREvents()
+	return ReplicatedStorage:FindFirstChild("rEvents") or ReplicatedStorage:FindFirstChild("remotes")
+end
+
+local function getSellEvent(rEvents)
+	if not rEvents then return nil end
+	return rEvents:FindFirstChild("sellPetEvent")
+		or rEvents:FindFirstChild("SellPetEvent")
+		or rEvents:FindFirstChild("sellPet")
+		or rEvents:FindFirstChild("SellPet")
+end
+
+-- Naghahanap ng kahit anong remote na may "lock" sa pangalan
+local function findLockRemotes(root)
+	local found = {}
+	if not root then return found end
+
+	for _, obj in ipairs(root:GetDescendants()) do
+		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+			local lowerName = string.lower(obj.Name)
+			if string.find(lowerName, "lock") then
+				table.insert(found, obj)
+			end
+		end
+	end
+
+	return found
+end
+
+-- Chine-check kung naka-lock ang pet
+local function isPetLocked(pet)
+	if not pet then return false end
+
+	for _, child in ipairs(pet:GetDescendants()) do
+		if child:IsA("BoolValue") then
+			local lower = string.lower(child.Name)
+			if string.find(lower, "lock") then
+				return child.Value == true
+			end
+		end
+	end
+
+	for attrName, attrVal in pairs(pet:GetAttributes()) do
+		if type(attrVal) == "boolean" and string.find(string.lower(attrName), "lock") then
+			return attrVal
+		end
+	end
+
+	-- Kung walang makitang lock flag, subukan pa ring i-unlock
+	return true
+end
+
+local function sendToRemote(remote, ...)
+	local args = { ... }
+	pcall(function()
+		if remote:IsA("RemoteFunction") then
+			remote:InvokeServer(unpack(args))
+		elseif remote:IsA("RemoteEvent") then
+			remote:FireServer(unpack(args))
+		end
+	end)
+end
+
+-- Sinusubukang i-unlock ang pet gamit ang iba't ibang posibleng remote at argument patterns
+local function unlockPet(pet, rEvents)
+	if not pet then return false end
+
+	-- Kung may BoolValue na Locked/IsLocked sa loob, i-set sa false kung pwedeng ma-access
+	for _, child in ipairs(pet:GetDescendants()) do
+		if child:IsA("BoolValue") and string.find(string.lower(child.Name), "lock") and child.Value == true then
+			pcall(function()
+				child.Value = false
+			end)
+		end
+	end
+
+	local remotes = findLockRemotes(rEvents)
+	if #remotes == 0 then
+		remotes = findLockRemotes(ReplicatedStorage)
+	end
+
+	for _, remote in ipairs(remotes) do
+		sendToRemote(remote, pet)
+		sendToRemote(remote, pet.Name)
+		sendToRemote(remote, "lockPet", pet)
+		sendToRemote(remote, "unlockPet", pet)
+		sendToRemote(remote, "LockPet", pet)
+		sendToRemote(remote, "UnlockPet", pet)
+		sendToRemote(remote, pet, false)
+		sendToRemote(remote, "lock", pet)
+		sendToRemote(remote, "unlock", pet)
+	end
+
+	task.wait(0.15)
+	return true
+end
+
+local function sellPet(pet, sellEvent)
+	if not pet or not sellEvent then return end
+	pcall(function()
+		if sellEvent:IsA("RemoteFunction") then
+			sellEvent:InvokeServer("sellPet", pet)
+		else
+			sellEvent:FireServer("sellPet", pet)
+		end
+	end)
+end
+
+local function forEachMatchingPet(callback)
+	local petsFolder = getPetsFolder()
+	if not petsFolder then return end
+
+	for _, rarityFolder in ipairs(petsFolder:GetChildren()) do
+		if rarityFolder:IsA("Folder") then
+			for _, pet in ipairs(rarityFolder:GetChildren()) do
+				if autoSellPetsByName[pet.Name] then
+					callback(pet)
+				end
+			end
+		elseif rarityFolder:IsA("Model") or rarityFolder:IsA("BasePart") then
+			if autoSellPetsByName[rarityFolder.Name] then
+				callback(rarityFolder)
+			end
+		end
+	end
+end
+
+-- Agad na i-unlock ang mga naka-lock na pet sa listahan pagka-turn ON ng Auto Sell
+local function unlockLockedPetsInList()
+	pcall(function()
+		local rEvents = getREvents()
+		forEachMatchingPet(function(pet)
+			if not autoSellEnabled then return end
+			if isPetLocked(pet) then
+				unlockPet(pet, rEvents)
+			end
+		end)
+	end)
+end
+
+local function processPet(pet, rEvents, sellEvent)
+	if not pet or not autoSellPetsByName[pet.Name] then return end
+	if isPetLocked(pet) then
+		unlockPet(pet, rEvents)
+	end
+	sellPet(pet, sellEvent)
+	task.wait(0.1)
+end
+
+-- Toggle Button Action
+toggleButton.MouseButton1Click:Connect(function()
+	autoSellEnabled = not autoSellEnabled
+
+	if autoSellEnabled then
+		toggleButton.Text = "Auto Sell: ON"
+		toggleButton.TextColor3 = Color3.fromRGB(80, 255, 120)
+		TweenService:Create(toggleButton, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(40, 80, 50) }):Play()
+
+		-- Unahin agad ang pag-unlock sa mga naka-lock na pet sa autoSellPetsByName
+		task.spawn(unlockLockedPetsInList)
+	else
+		toggleButton.Text = "Auto Sell: OFF"
+		toggleButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+		TweenService:Create(toggleButton, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(50, 50, 60) }):Play()
+	end
+end)
+
+-- Background Unlock & Selling Loop
+task.spawn(function()
+	while true do
+		if autoSellEnabled then
+			pcall(function()
+				local rEvents = getREvents()
+				local sellEvent = getSellEvent(rEvents)
+				local petsFolder = getPetsFolder()
+
+				if petsFolder and sellEvent then
+					for _, rarityFolder in ipairs(petsFolder:GetChildren()) do
+						if not autoSellEnabled then break end
+
+						if rarityFolder:IsA("Folder") then
+							for _, pet in ipairs(rarityFolder:GetChildren()) do
+								if not autoSellEnabled then break end
+								processPet(pet, rEvents, sellEvent)
+							end
+						elseif rarityFolder:IsA("Model") or rarityFolder:IsA("BasePart") then
+							processPet(rarityFolder, rEvents, sellEvent)
+						end
+					end
+				end
+			end)
+		end
+		task.wait(0.5)
+	end
+end)
