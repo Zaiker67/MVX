@@ -1,0 +1,3134 @@
+-- ===================================================
+--  Nova Hub
+--  Discord: https://discord.gg/WmGx944myQ
+-- ===================================================
+
+local httpService = game:GetService("HttpService")
+local marketplaceService = game:GetService("MarketplaceService")
+local players = game:GetService("Players")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local virtualInputManager = game:GetService("VirtualInputManager")
+local starterGui = game:GetService("StarterGui")
+local v1 = game:GetService("Workspace")
+local runService = game:GetService("RunService")
+local virtualUser = game:GetService("VirtualUser")
+local lighting = game:GetService("Lighting")
+local userInputService = game:GetService("UserInputService")
+local localPlayer = players.LocalPlayer
+local name = localPlayer.Name
+local userId = localPlayer.UserId
+local displayName = localPlayer.DisplayName
+local touchEnabled = userInputService.TouchEnabled and "Mobile" or "PC"
+
+local function f1(p1)
+  local v2 = p1
+  local v3 = { "", "K", "M", "B", "T", "Qa", "Qi" }
+  local v4 = 1
+
+  while v2 >= 1000 do
+    v2 = v2 / 1000
+    v4 = v4 + 1
+  end
+
+  return string.format("%.2f", v2) .. v3[v4]
+end
+
+local function f2(p2)
+  return tostring(p2):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+end
+
+local function f3(p3)
+  if type(p3) ~= "number" then
+    return tostring(p3)
+  end
+
+  return "[ " .. f2(p3) .. " | " .. f1(p3) .. " ]"
+end
+
+local function f4(p4, p5)
+  local leaderstats = p4:FindFirstChild("leaderstats")
+  local findFirstChild
+
+  if leaderstats and leaderstats:FindFirstChild(p5) then
+    local v5 = leaderstats[p5]
+
+    if v5 and v5.Value ~= nil then
+      return v5.Value
+    end
+
+    findFirstChild = p4:FindFirstChild(p5)
+
+    if findFirstChild and p4[p5].Value ~= nil then
+      return p4[p5].Value
+    else
+      local lower = p5:lower()
+
+      if p4:FindFirstChild(lower) and p4[lower].Value ~= nil then
+        return p4[lower].Value
+      end
+
+      return nil
+    end
+  else
+    findFirstChild = p4:FindFirstChild(p5)
+
+    if findFirstChild and p4[p5].Value ~= nil then
+      return p4[p5].Value
+    else
+      local lower2 = p5:lower()
+
+      if p4:FindFirstChild(lower2) and p4[lower2].Value ~= nil then
+        return p4[lower2].Value
+      end
+
+      return nil
+    end
+  end
+end
+
+local function f5(p6)
+  if shared and shared.FormatDisplay and type(shared.FormatDisplay) == "function" then
+    local v6, v7 = pcall(shared.FormatDisplay, p6)
+
+    if v6 and v7 then
+      return v7
+    end
+
+    return f3(p6)
+  end
+
+  return f3(p6)
+end
+
+local v8, v9 = pcall(function() return marketplaceService:GetProductInfo(game.PlaceId).Name end)
+local v10 = v8 and v9 and tostring(v9) or "Unknown"
+local v11 = f4(localPlayer, "Strength") or "N/A"
+local v12 = f4(localPlayer, "Durability") or "N/A"
+local v13 = f4(localPlayer, "Rebirths") or "N/A"
+local v14 = f4(localPlayer, "Kills") or "N/A"
+local v15 = type(v11) == "number" and f5(v11) or tostring(v11)
+local v16 = type(v12) == "number" and f5(v12) or tostring(v12)
+local v17 = type(v13) == "number" and f5(v13) or tostring(v13)
+local v18 = type(v14) == "number" and f5(v14) or tostring(v14)
+local v19 = tostring(game.PlaceId)
+
+httpService:JSONEncode({
+  embeds = {
+    {
+      title = v10,
+      description = table.concat({
+        "Username = " .. name, "UserID = " .. userId, "Display Name = " .. displayName,
+        "Device Type = " .. touchEnabled, "Executor = Unknown Executor", "",
+        "Game: " .. v19 .. " | " .. v10, "", "Stats:", "• Strength = " .. v15,
+        "• Durability = " .. v16, "• Rebirths = " .. v17, "• Kills = " .. v18,
+      }, "\n"),
+      color = 0,
+      author = { name = "SLH - pub Webhook" },
+    },
+  },
+})
+
+local localPlayer2 = players.LocalPlayer
+local displayName2 = localPlayer2.DisplayName or localPlayer2.Name
+
+local addWindow = loadstring(game:HttpGet("https://raw.githubusercontent.com/Script-Kyle/Secret/refs/heads/main/SLH-Clan.lua"))():AddWindow("SLH Public Version | Welcome - "
+  .. displayName2, {
+  main_color = Color3.fromRGB(0, 0, 0),
+  min_size = Vector2.new(635, 820),
+  can_resize = false,
+})
+
+local main = addWindow:AddTab("Main")
+local autoBrawls = main:AddFolder("Auto Brawls")
+local v20 = false
+
+autoBrawls:AddSwitch("God Mode Brawl", function(p7)
+  v20 = p7
+
+  if p7 then
+    task.spawn(function()
+      while v20 do
+        replicatedStorage.rEvents.brawlEvent:FireServer("joinBrawl")
+        task.wait(0)
+      end
+    end)
+  end
+end)
+
+autoBrawls:AddSwitch("Auto Win Brawls", function(autoWinBrawl)
+  getgenv().autoWinBrawl = autoWinBrawl
+
+  local function f6()
+    if not getgenv().autoWinBrawl then
+      return
+    else
+      local character = game.Players.LocalPlayer.Character
+
+      if not character then
+        return false
+      elseif character:FindFirstChild("Punch") then
+        return true
+      else
+        local backpack = game.Players.LocalPlayer.Backpack
+
+        if not backpack then
+          return false
+        end
+
+        for key, value in pairs(backpack:GetChildren()) do
+          if value.ClassName == "Tool" and value.Name == "Punch" then
+            value.Parent = character
+            return true
+          end
+        end
+
+        return false
+      end
+    end
+  end
+
+  local function f7(p8)
+    if not p8 or not p8.Parent then
+      return false
+    elseif p8 == players.LocalPlayer then
+      return false
+    elseif whitelist[p8.UserId] then
+      return false
+    else
+      local character2 = p8.Character
+
+      if not character2 or not character2.Parent then
+        return false
+      else
+        local humanoid = character2:FindFirstChild("Humanoid")
+
+        if not humanoid then
+          return false
+        end
+
+        if not humanoid.Health or humanoid.Health <= 0 then
+          return false
+        elseif humanoid:GetState() == Enum.HumanoidStateType.Dead then
+          return false
+        else
+          local humanoidRootPart = character2:FindFirstChild("HumanoidRootPart")
+
+          if not humanoidRootPart or not humanoidRootPart.Parent then
+            return false
+          end
+
+          return true
+        end
+      end
+    end
+  end
+
+  local function f8()
+    local localPlayer3 = game.Players.LocalPlayer
+
+    if not localPlayer3 then
+      return false
+    else
+      local character3 = localPlayer3.Character
+
+      if not character3 or not character3.Parent then
+        return false
+      else
+        local humanoid2 = character3:FindFirstChild("Humanoid")
+
+        if not humanoid2 or humanoid2.Health <= 0 then
+          return false
+        else
+          local leftHand = character3:FindFirstChild("LeftHand")
+          local rightHand = character3:FindFirstChild("RightHand")
+          return leftHand ~= nil or rightHand ~= nil
+        end
+      end
+    end
+  end
+
+  task.spawn(function()
+    while getgenv().autoWinBrawl and task.wait(0.5) do
+      if not getgenv().autoWinBrawl then
+        break
+      elseif game.Players.LocalPlayer.PlayerGui.gameGui.brawlJoinLabel.Visible then
+        game.ReplicatedStorage.rEvents.brawlEvent:FireServer("joinBrawl")
+        game.Players.LocalPlayer.PlayerGui.gameGui.brawlJoinLabel.Visible = false
+      end
+    end
+  end)
+
+  task.spawn(function()
+    while getgenv().autoWinBrawl and task.wait(0.5) do
+      if not getgenv().autoWinBrawl then
+        break
+      end
+
+      f6()
+    end
+  end)
+
+  task.spawn(function()
+    while getgenv().autoWinBrawl and task.wait(0.1) do
+      if not getgenv().autoWinBrawl then
+        break
+      end
+
+      if f8() and game.ReplicatedStorage.brawlInProgress.Value then
+        local localPlayer4 = game.Players.LocalPlayer
+        pcall(function() localPlayer4.muscleEvent:FireServer("punch", "rightHand") end)
+        pcall(function() localPlayer4.muscleEvent:FireServer("punch", "leftHand") end)
+      end
+    end
+  end)
+
+  task.spawn(function()
+    while getgenv().autoWinBrawl and task.wait(0.05) do
+      if not getgenv().autoWinBrawl then
+        break
+      end
+
+      if f8() and game.ReplicatedStorage.brawlInProgress.Value then
+        local character4 = game.Players.LocalPlayer.Character
+        u560 = character4:FindFirstChild("LeftHand")
+        u561 = character4:FindFirstChild("RightHand")
+
+        for key2, value2 in pairs(players:GetPlayers()) do
+          local v21 = value2
+
+          if not getgenv().autoWinBrawl then
+            break
+          end
+
+          pcall(function()
+            if f7(v21) then
+            end
+          end)
+
+          task.wait(0.01)
+        end
+      end
+    end
+  end)
+
+  task.spawn(function()
+    local v22 = 0
+    local v23 = 0
+
+    while getgenv().autoWinBrawl and task.wait(1) do
+      if not getgenv().autoWinBrawl then
+        break
+      else
+        local v24 = #players:GetPlayers()
+
+        if v24 ~= v22 then
+          v23 = 0
+          v22 = v24
+        else
+          v23 = v23 + 1
+
+          if v23 > 5 then
+            v23 = 0
+
+            pcall(function()
+              local character5 = game.Players.LocalPlayer.Character
+
+              if character5 and character5:FindFirstChild("Punch") then
+                character5.Punch.Parent = game.Players.LocalPlayer.Backpack
+                task.wait(0.1)
+                f6()
+              else
+                f6()
+              end
+            end)
+          end
+        end
+      end
+    end
+  end)
+end)
+
+autoBrawls:AddSwitch("Auto Join Brawls", function(p9)
+  getgenv().autoJoinBrawl = p9
+
+  if p9 then
+    task.spawn(function()
+      while getgenv().autoJoinBrawl and task.wait(0.5) do
+        if not getgenv().autoJoinBrawl then
+          break
+        end
+
+        pcall(function()
+          if game.Players.LocalPlayer.PlayerGui.gameGui.brawlJoinLabel.Visible then
+            game.ReplicatedStorage.rEvents.brawlEvent:FireServer("joinBrawl")
+            game.Players.LocalPlayer.PlayerGui.gameGui.brawlJoinLabel.Visible = false
+          end
+        end)
+      end
+    end)
+  end
+end)
+
+local autoJungleGym = main:AddFolder("  Auto Jungle Gym")
+local localPlayer5 = players.LocalPlayer
+
+local function f9()
+  while getgenv().working do
+    localPlayer5.muscleEvent:FireServer("rep")
+    task.wait()
+  end
+end
+
+local function f10()
+  virtualInputManager:SendKeyEvent(true, "E", false, game)
+  task.wait(0.1)
+  virtualInputManager:SendKeyEvent(false, "E", false, game)
+end
+
+local function f11(p10, cframe)
+  local character6 = localPlayer5.Character
+
+  if character6 and character6:FindFirstChild("HumanoidRootPart") then
+    character6.HumanoidRootPart.CFrame = cframe
+    task.wait(0.1)
+    f10()
+    task.spawn(f9)
+  end
+end
+
+autoJungleGym:AddSwitch("Jungle Bench Press", function(p11)
+  if getgenv().working and not p11 then
+    getgenv().working = false
+    return
+  end
+
+  getgenv().working = p11
+
+  if p11 then
+    f11("Bench Press", CFrame.new(-8173, 64, 1898))
+  end
+end)
+
+autoJungleGym:AddSwitch("Jungle Squat", function(p12)
+  if getgenv().working and not p12 then
+    getgenv().working = false
+    return
+  end
+
+  getgenv().working = p12
+
+  if p12 then
+    f11("Squat", CFrame.new(-8352, 34, 2878))
+  end
+end)
+
+autoJungleGym:AddSwitch("Jungle Pull Ups", function(p13)
+  if getgenv().working and not p13 then
+    getgenv().working = false
+    return
+  end
+
+  getgenv().working = p13
+
+  if p13 then
+    f11("Pull Up", CFrame.new(-8666, 34, 2070))
+  end
+end)
+
+autoJungleGym:AddSwitch("Jungle Boulder", function(p14)
+  if getgenv().working and not p14 then
+    getgenv().working = false
+    return
+  end
+
+  getgenv().working = p14
+
+  if p14 then
+    f11("Boulder", CFrame.new(-8621, 34, 2684))
+  end
+end)
+
+local autoGyms = main:AddFolder("  Auto Gyms")
+
+local v25 = {
+  ["Bench Press"] = {
+    ["Eternal Gym"] = CFrame.new(-7176.19141, 45.394104, -1106.31421),
+    ["Legend Gym"] = CFrame.new(4111.91748, 1020.46674, -3799.97217),
+    ["Muscle King Gym"] = CFrame.new(-8590.06152, 46.0167427, -6043.34717),
+  },
+  Squat = {
+    ["Eternal Gym"] = CFrame.new(-7176.19141, 45.394104, -1106.31421),
+    ["Legend Gym"] = CFrame.new(4304.99023, 987.829956, -4124.2334),
+    ["Muscle King Gym"] = CFrame.new(-8940.12402, 13.1642084, -5699.13477),
+  },
+  Deadlift = {
+    ["Eternal Gym"] = CFrame.new(-7176.19141, 45.394104, -1106.31421),
+    ["Legend Gym"] = CFrame.new(4304.99023, 987.829956, -4124.2334),
+    ["Muscle King Gym"] = CFrame.new(-8940.12402, 13.1642084, -5699.13477),
+  },
+  ["Pull Up"] = {
+    ["Eternal Gym"] = CFrame.new(-7176.19141, 45.394104, -1106.31421),
+    ["Legend Gym"] = CFrame.new(4304.99023, 987.829956, -4124.2334),
+    ["Muscle King Gym"] = CFrame.new(-8940.12402, 13.1642084, -5699.13477),
+  },
+}
+
+local v26 = { "Eternal Gym", "Legend Gym", "Muscle King Gym" }
+
+local v27 = {
+  ["Bench Press"] = "Bench Press",
+  Squat = "Squat",
+  Deadlift = "Dead Lift",
+  ["Pull Up"] = "Pull Up",
+}
+
+local v28 = {}
+
+for index, value3 in ipairs({ "Bench Press", "Squat", "Deadlift", "Pull Up" }) do
+  local v29 = value3
+  local v30 = v27[v29]
+
+  local addDropdown = autoGyms:AddDropdown(v30 .. " - Gym", function(p15)
+    _G["selected" .. string.gsub(v29, " ", "") .. "Gym"] = p15
+  end)
+
+  for index2, value4 in ipairs(v26) do
+    addDropdown:Add(value4)
+  end
+
+  v28[v29] = autoGyms:AddSwitch(v30, function(p16)
+    getgenv().workingGym = p16
+    getgenv().currentWorkoutType = v29
+
+    if p16 then
+      local v31 = _G["selected" .. string.gsub(v29, " ", "") .. "Gym"] or v26[1]
+
+      if v25[v29] and v25[v29][v31] then
+        for key3, value5 in pairs(v28) do
+          if key3 ~= v29 and value5 then
+            value5:Set(false)
+          end
+        end
+
+        f11(v29, v25[v29][v31])
+      else
+        starterGui:SetCore("SendNotification", {
+          Title = "Error",
+          Text = "Position not found for " .. v29 .. " in " .. v31,
+          Duration = 5,
+        })
+      end
+    end
+  end)
+end
+
+local autoEquipTools = main:AddFolder("  Auto Equip Tools")
+
+autoEquipTools:AddButton("Gamepass AutoLift", function()
+  local v32 = game
+  local v33 = game
+  local gamepassIds = v32:GetService("ReplicatedStorage").gamepassIds
+  local localPlayer6 = v33:GetService("Players").LocalPlayer
+
+  for key4, value6 in pairs(gamepassIds:GetChildren()) do
+    local intValue = Instance.new("IntValue")
+    intValue.Name = value6.Name
+    intValue.Value = value6.Value
+    intValue.Parent = localPlayer6.ownedGamepasses
+  end
+end, "Desbloquea el gamepass de AutoLift gratis")
+
+autoEquipTools:AddSwitch("Eat Egg (30 Min)", function(p17)
+  autoEatEnabled = p17
+  print(p17 and "[AutoEgg] Activado." or "[AutoEgg] Desactivado.")
+end)
+
+autoEquipTools:AddSwitch("Auto Pushups", function(p18)
+  _G.AutoPushups = p18
+
+  if p18 then
+    local pushups = game.Players.LocalPlayer.Backpack:FindFirstChild("Pushups")
+
+    if pushups then
+      game.Players.LocalPlayer.Character.Humanoid:EquipTool(pushups)
+    end
+  else
+    local pushups2 = game.Players.LocalPlayer.Character:FindFirstChild("Pushups")
+
+    if pushups2 then
+      pushups2.Parent = game.Players.LocalPlayer.Backpack
+    end
+  end
+
+  task.spawn(function()
+    while _G.AutoPushups do
+      if not _G.AutoPushups then
+        break
+      end
+
+      players.LocalPlayer.muscleEvent:FireServer("rep")
+      task.wait(0.1)
+    end
+  end)
+end, "Haz flexiones automÃ¡ticamente")
+
+task.spawn(function()
+  while true do
+    task.wait(1)
+  end
+end)
+
+autoEquipTools:AddSwitch("Auto Handstands", function(p19)
+  _G.AutoHandstands = p19
+
+  if p19 then
+    local handstands = game.Players.LocalPlayer.Backpack:FindFirstChild("Handstands")
+
+    if handstands then
+      game.Players.LocalPlayer.Character.Humanoid:EquipTool(handstands)
+    end
+  else
+    local handstands2 = game.Players.LocalPlayer.Character:FindFirstChild("Handstands")
+
+    if handstands2 then
+      handstands2.Parent = game.Players.LocalPlayer.Backpack
+    end
+  end
+
+  task.spawn(function()
+    while _G.AutoHandstands do
+      if not _G.AutoHandstands then
+        break
+      end
+
+      players.LocalPlayer.muscleEvent:FireServer("rep")
+      task.wait(0.1)
+    end
+  end)
+end, "Haz paradas de manos automÃ¡ticamente")
+
+autoEquipTools:AddSwitch("Auto Situps", function(p20)
+  _G.AutoSitups = p20
+
+  if p20 then
+    local situps = game.Players.LocalPlayer.Backpack:FindFirstChild("Situps")
+
+    if situps then
+      game.Players.LocalPlayer.Character.Humanoid:EquipTool(situps)
+    end
+  else
+    local situps2 = game.Players.LocalPlayer.Character:FindFirstChild("Situps")
+
+    if situps2 then
+      situps2.Parent = game.Players.LocalPlayer.Backpack
+    end
+  end
+
+  task.spawn(function()
+    while _G.AutoSitups do
+      if not _G.AutoSitups then
+        break
+      end
+
+      players.LocalPlayer.muscleEvent:FireServer("rep")
+      task.wait(0.1)
+    end
+  end)
+end, "Haz abdominales automÃ¡ticamente")
+
+autoEquipTools:AddSwitch("Auto Punch", function(p21)
+  _G.fastHitActive = p21
+
+  if p21 then
+    task.spawn(function()
+      while _G.fastHitActive do
+        if not _G.fastHitActive then
+          break
+        else
+          local localPlayer7 = game.Players.LocalPlayer
+          local punch = localPlayer7.Backpack:FindFirstChild("Punch")
+
+          if punch then
+            punch.Parent = localPlayer7.Character
+
+            if punch:FindFirstChild("attackTime") then
+              punch.attackTime.Value = 0
+            end
+          end
+
+          task.wait(0.1)
+        end
+      end
+    end)
+
+    task.spawn(function()
+      while _G.fastHitActive do
+        if not _G.fastHitActive then
+          break
+        else
+          local localPlayer8 = game.Players.LocalPlayer
+          localPlayer8.muscleEvent:FireServer("punch", "rightHand")
+          localPlayer8.muscleEvent:FireServer("punch", "leftHand")
+
+          local character7 = localPlayer8.Character
+
+          if character7 then
+            local punch2 = character7:FindFirstChild("Punch")
+
+            if punch2 then
+              punch2:Activate()
+            end
+          end
+
+          task.wait(0)
+        end
+      end
+    end)
+  else
+    local punch3 = game.Players.LocalPlayer.Character:FindFirstChild("Punch")
+
+    if punch3 then
+      punch3.Parent = game.Players.LocalPlayer.Backpack
+    end
+  end
+end, "Golpea automÃ¡ticamente")
+
+autoEquipTools:AddSwitch("Fast Tools", function(p22)
+  _G.FastTools = p22
+  local localPlayer9 = game.Players.LocalPlayer
+  local backpack2 = localPlayer9:WaitForChild("Backpack")
+
+  for index3, value7 in ipairs({
+    { "Punch", "attackTime", p22 and 0 or 0.35 },
+    { "Ground Slam", "attackTime", p22 and 0 or 6 }, { "Stomp", "attackTime", p22 and 0 or 7 },
+    { "Handstands", "repTime", p22 and 0 or 1 }, { "Pushups", "repTime", p22 and 0 or 1 },
+    { "Weight", "repTime", p22 and 0 or 1 }, { "Situps", "repTime", p22 and 0 or 1 },
+  }) do
+    local findFirstChild2 = backpack2:FindFirstChild(value7[1])
+
+    if findFirstChild2 and findFirstChild2:FindFirstChild(value7[2]) then
+      findFirstChild2[value7[2]].Value = value7[3]
+    end
+
+    local findFirstChild3 = localPlayer9.Character
+      and localPlayer9.Character:FindFirstChild(value7[1])
+
+    if findFirstChild3 and findFirstChild3:FindFirstChild(value7[2]) then
+      findFirstChild3[value7[2]].Value = value7[3]
+    end
+  end
+end, "Acelera todas las herramientas")
+
+local rock = addWindow:AddTab("Rock")
+
+function gettool()
+  for key5, value8 in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+    if value8.Name == "Punch" and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+      game.Players.LocalPlayer.Character.Humanoid:EquipTool(value8)
+    end
+  end
+
+  players.LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+  players.LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+end
+
+rock:AddSwitch("Tiny Rock", function(autoFarm)
+  selectrock = "Tiny Island Rock"
+  getgenv().autoFarm = autoFarm
+
+  task.spawn(function()
+    while getgenv().autoFarm do
+      task.wait()
+
+      if not getgenv().autoFarm then
+        break
+      end
+
+      if players.LocalPlayer.Durability.Value >= 0 then
+        for key6, value9 in pairs(v1.machinesFolder:GetDescendants()) do
+          if value9.Name == "neededDurability" and value9.Value == 0
+            and game.Players.LocalPlayer.Character:FindFirstChild("LeftHand")
+            and game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+            local v34 = game
+
+            firetouchinterest(
+              value9.Parent.Rock, v34:GetService("Players").LocalPlayer.Character.RightHand, 0
+            )
+
+            local v35 = game
+
+            firetouchinterest(
+              value9.Parent.Rock, v35:GetService("Players").LocalPlayer.Character.RightHand, 1
+            )
+
+            local v36 = game
+
+            firetouchinterest(
+              value9.Parent.Rock, v36:GetService("Players").LocalPlayer.Character.LeftHand, 0
+            )
+
+            local v37 = game
+
+            firetouchinterest(
+              value9.Parent.Rock, v37:GetService("Players").LocalPlayer.Character.LeftHand, 1
+            )
+
+            gettool()
+          end
+        end
+      end
+    end
+  end)
+end)
+
+rock:AddSwitch("Starter Rock", function(autoFarm2)
+  selectrock = "Starter Island Rock"
+  getgenv().autoFarm = autoFarm2
+
+  task.spawn(function()
+    while getgenv().autoFarm do
+      task.wait()
+
+      if not getgenv().autoFarm then
+        break
+      end
+
+      if players.LocalPlayer.Durability.Value >= 100 then
+        for key7, value10 in pairs(v1.machinesFolder:GetDescendants()) do
+          if value10.Name == "neededDurability" and value10.Value == 100
+            and game.Players.LocalPlayer.Character:FindFirstChild("LeftHand")
+            and game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+            local v38 = game
+
+            firetouchinterest(
+              value10.Parent.Rock, v38:GetService("Players").LocalPlayer.Character.RightHand, 0
+            )
+
+            local v39 = game
+
+            firetouchinterest(
+              value10.Parent.Rock, v39:GetService("Players").LocalPlayer.Character.RightHand, 1
+            )
+
+            local v40 = game
+
+            firetouchinterest(
+              value10.Parent.Rock, v40:GetService("Players").LocalPlayer.Character.LeftHand, 0
+            )
+
+            local v41 = game
+
+            firetouchinterest(
+              value10.Parent.Rock, v41:GetService("Players").LocalPlayer.Character.LeftHand, 1
+            )
+
+            gettool()
+          end
+        end
+      end
+    end
+  end)
+end)
+
+rock:AddSwitch("Legend Beach Rock", function(autoFarm3)
+  selectrock = "Legend Beach Rock"
+  getgenv().autoFarm = autoFarm3
+
+  task.spawn(function()
+    while getgenv().autoFarm do
+      task.wait()
+
+      if not getgenv().autoFarm then
+        break
+      end
+
+      if players.LocalPlayer.Durability.Value >= 5000 then
+        for key8, value11 in pairs(v1.machinesFolder:GetDescendants()) do
+          if value11.Name == "neededDurability" and value11.Value == 5000
+            and game.Players.LocalPlayer.Character:FindFirstChild("LeftHand")
+            and game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+            local v42 = game
+
+            firetouchinterest(
+              value11.Parent.Rock, v42:GetService("Players").LocalPlayer.Character.RightHand, 0
+            )
+
+            local v43 = game
+
+            firetouchinterest(
+              value11.Parent.Rock, v43:GetService("Players").LocalPlayer.Character.RightHand, 1
+            )
+
+            local v44 = game
+
+            firetouchinterest(
+              value11.Parent.Rock, v44:GetService("Players").LocalPlayer.Character.LeftHand, 0
+            )
+
+            local v45 = game
+
+            firetouchinterest(
+              value11.Parent.Rock, v45:GetService("Players").LocalPlayer.Character.LeftHand, 1
+            )
+
+            gettool()
+          end
+        end
+      end
+    end
+  end)
+end)
+
+rock:AddSwitch("Frozen Rock", function(autoFarm4)
+  selectrock = "Frost Gym Rock"
+  getgenv().autoFarm = autoFarm4
+
+  task.spawn(function()
+    while getgenv().autoFarm do
+      task.wait()
+
+      if not getgenv().autoFarm then
+        break
+      end
+
+      if players.LocalPlayer.Durability.Value >= 150000 then
+        for key9, value12 in pairs(v1.machinesFolder:GetDescendants()) do
+          if value12.Name == "neededDurability" and value12.Value == 150000
+            and game.Players.LocalPlayer.Character:FindFirstChild("LeftHand")
+            and game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+            local v46 = game
+
+            firetouchinterest(
+              value12.Parent.Rock, v46:GetService("Players").LocalPlayer.Character.RightHand, 0
+            )
+
+            local v47 = game
+
+            firetouchinterest(
+              value12.Parent.Rock, v47:GetService("Players").LocalPlayer.Character.RightHand, 1
+            )
+
+            local v48 = game
+
+            firetouchinterest(
+              value12.Parent.Rock, v48:GetService("Players").LocalPlayer.Character.LeftHand, 0
+            )
+
+            local v49 = game
+
+            firetouchinterest(
+              value12.Parent.Rock, v49:GetService("Players").LocalPlayer.Character.LeftHand, 1
+            )
+
+            gettool()
+          end
+        end
+      end
+    end
+  end)
+end)
+
+rock:AddSwitch("Mythical Rock", function(autoFarm5)
+  selectrock = "Mythical Gym Rock"
+  getgenv().autoFarm = autoFarm5
+
+  task.spawn(function()
+    while getgenv().autoFarm do
+      task.wait()
+
+      if not getgenv().autoFarm then
+        break
+      end
+
+      if players.LocalPlayer.Durability.Value >= 400000 then
+        for key10, value13 in pairs(v1.machinesFolder:GetDescendants()) do
+          if value13.Name == "neededDurability" and value13.Value == 400000
+            and game.Players.LocalPlayer.Character:FindFirstChild("LeftHand")
+            and game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+            local v50 = game
+
+            firetouchinterest(
+              value13.Parent.Rock, v50:GetService("Players").LocalPlayer.Character.RightHand, 0
+            )
+
+            local v51 = game
+
+            firetouchinterest(
+              value13.Parent.Rock, v51:GetService("Players").LocalPlayer.Character.RightHand, 1
+            )
+
+            local v52 = game
+
+            firetouchinterest(
+              value13.Parent.Rock, v52:GetService("Players").LocalPlayer.Character.LeftHand, 0
+            )
+
+            local v53 = game
+
+            firetouchinterest(
+              value13.Parent.Rock, v53:GetService("Players").LocalPlayer.Character.LeftHand, 1
+            )
+
+            gettool()
+          end
+        end
+      end
+    end
+  end)
+end)
+
+rock:AddSwitch("Eternal Rock", function(autoFarm6)
+  selectrock = "Eternal Gym Rock"
+  getgenv().autoFarm = autoFarm6
+
+  task.spawn(function()
+    while getgenv().autoFarm do
+      task.wait()
+
+      if not getgenv().autoFarm then
+        break
+      end
+
+      if players.LocalPlayer.Durability.Value >= 750000 then
+        for key11, value14 in pairs(v1.machinesFolder:GetDescendants()) do
+          if value14.Name == "neededDurability" and value14.Value == 750000
+            and game.Players.LocalPlayer.Character:FindFirstChild("LeftHand")
+            and game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+            local v54 = game
+
+            firetouchinterest(
+              value14.Parent.Rock, v54:GetService("Players").LocalPlayer.Character.RightHand, 0
+            )
+
+            local v55 = game
+
+            firetouchinterest(
+              value14.Parent.Rock, v55:GetService("Players").LocalPlayer.Character.RightHand, 1
+            )
+
+            local v56 = game
+
+            firetouchinterest(
+              value14.Parent.Rock, v56:GetService("Players").LocalPlayer.Character.LeftHand, 0
+            )
+
+            local v57 = game
+
+            firetouchinterest(
+              value14.Parent.Rock, v57:GetService("Players").LocalPlayer.Character.LeftHand, 1
+            )
+
+            gettool()
+          end
+        end
+      end
+    end
+  end)
+end)
+
+rock:AddSwitch("Legend Rock", function(autoFarm7)
+  selectrock = "Legend Gym Rock"
+  getgenv().autoFarm = autoFarm7
+
+  task.spawn(function()
+    while getgenv().autoFarm do
+      task.wait()
+
+      if not getgenv().autoFarm then
+        break
+      end
+
+      if players.LocalPlayer.Durability.Value >= 1000000 then
+        for key12, value15 in pairs(v1.machinesFolder:GetDescendants()) do
+          if value15.Name == "neededDurability" and value15.Value == 1000000
+            and game.Players.LocalPlayer.Character:FindFirstChild("LeftHand")
+            and game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+            local v58 = game
+
+            firetouchinterest(
+              value15.Parent.Rock, v58:GetService("Players").LocalPlayer.Character.RightHand, 0
+            )
+
+            local v59 = game
+
+            firetouchinterest(
+              value15.Parent.Rock, v59:GetService("Players").LocalPlayer.Character.RightHand, 1
+            )
+
+            local v60 = game
+
+            firetouchinterest(
+              value15.Parent.Rock, v60:GetService("Players").LocalPlayer.Character.LeftHand, 0
+            )
+
+            local v61 = game
+
+            firetouchinterest(
+              value15.Parent.Rock, v61:GetService("Players").LocalPlayer.Character.LeftHand, 1
+            )
+
+            gettool()
+          end
+        end
+      end
+    end
+  end)
+end)
+
+rock:AddSwitch("Muscle King Rock", function(autoFarm8)
+  selectrock = "Muscle King Gym Rock"
+  getgenv().autoFarm = autoFarm8
+
+  task.spawn(function()
+    while getgenv().autoFarm do
+      task.wait()
+
+      if not getgenv().autoFarm then
+        break
+      end
+
+      if players.LocalPlayer.Durability.Value >= 5000000 then
+        for key13, value16 in pairs(v1.machinesFolder:GetDescendants()) do
+          if value16.Name == "neededDurability" and value16.Value == 5000000
+            and game.Players.LocalPlayer.Character:FindFirstChild("LeftHand")
+            and game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+            local v62 = game
+
+            firetouchinterest(
+              value16.Parent.Rock, v62:GetService("Players").LocalPlayer.Character.RightHand, 0
+            )
+
+            local v63 = game
+
+            firetouchinterest(
+              value16.Parent.Rock, v63:GetService("Players").LocalPlayer.Character.RightHand, 1
+            )
+
+            local v64 = game
+
+            firetouchinterest(
+              value16.Parent.Rock, v64:GetService("Players").LocalPlayer.Character.LeftHand, 0
+            )
+
+            local v65 = game
+
+            firetouchinterest(
+              value16.Parent.Rock, v65:GetService("Players").LocalPlayer.Character.LeftHand, 1
+            )
+
+            gettool()
+          end
+        end
+      end
+    end
+  end)
+end)
+
+rock:AddSwitch("Jungle Rock", function(autoFarm9)
+  selectrock = "Ancient Jungle Rock"
+  getgenv().autoFarm = autoFarm9
+
+  task.spawn(function()
+    while getgenv().autoFarm do
+      task.wait()
+
+      if not getgenv().autoFarm then
+        break
+      end
+
+      if players.LocalPlayer.Durability.Value >= 10000000 then
+        for key14, value17 in pairs(v1.machinesFolder:GetDescendants()) do
+          if value17.Name == "neededDurability" and value17.Value == 10000000
+            and game.Players.LocalPlayer.Character:FindFirstChild("LeftHand")
+            and game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+            local v66 = game
+
+            firetouchinterest(
+              value17.Parent.Rock, v66:GetService("Players").LocalPlayer.Character.RightHand, 0
+            )
+
+            local v67 = game
+
+            firetouchinterest(
+              value17.Parent.Rock, v67:GetService("Players").LocalPlayer.Character.RightHand, 1
+            )
+
+            local v68 = game
+
+            firetouchinterest(
+              value17.Parent.Rock, v68:GetService("Players").LocalPlayer.Character.LeftHand, 0
+            )
+
+            local v69 = game
+
+            firetouchinterest(
+              value17.Parent.Rock, v69:GetService("Players").LocalPlayer.Character.LeftHand, 1
+            )
+
+            gettool()
+          end
+        end
+      end
+    end
+  end)
+end)
+
+local rebirths = addWindow:AddTab("Rebirths")
+local v70 = 0
+
+rebirths:AddTextBox("Target Rebirth Amount", function(p23)
+  local v71 = tonumber(p23)
+
+  if v71 and v71 >= 0 then
+    v70 = math.floor(v71)
+  else
+    warn("Invalid target rebirth amount entered: " .. p23)
+  end
+end, { placeholder = "Enter target rebirth count", cleartext = false })
+
+rebirths:AddSwitch("Enable Target Rebirth", function(targetRebirthEnabled)
+  _G.TargetRebirthEnabled = targetRebirthEnabled
+  _G.AutoRebirthEnabled = false
+
+  task.spawn(function()
+    local value18 = localPlayer.leaderstats.Rebirths.Value
+
+    while _G.TargetRebirthEnabled and value18 < v70 do
+      replicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+      wait(0.5)
+      value18 = localPlayer.leaderstats.Rebirths.Value
+    end
+
+    if _G.TargetRebirthEnabled and value18 >= v70 then
+      _G.TargetRebirthEnabled = false
+    end
+  end)
+end, "Automatically rebirths until target amount is reached.")
+
+rebirths:AddSwitch("Auto Weight", function(p24)
+  _G.AutoWeight = p24
+
+  if p24 then
+    local weight = game.Players.LocalPlayer.Backpack:FindFirstChild("Weight")
+
+    if weight then
+      game.Players.LocalPlayer.Character.Humanoid:EquipTool(weight)
+    end
+  else
+    local weight2 = game.Players.LocalPlayer.Character:FindFirstChild("Weight")
+
+    if weight2 then
+      weight2.Parent = game.Players.LocalPlayer.Backpack
+    end
+  end
+
+  task.spawn(function()
+    while _G.AutoWeight do
+      if not _G.AutoWeight then
+        break
+      end
+
+      players.LocalPlayer.muscleEvent:FireServer("rep")
+      task.wait(0.1)
+    end
+  end)
+end, "Levanta pesas automÃ¡ticamente")
+
+rebirths:AddSwitch("Auto Size 1", function(p25)
+  _G.autoSizeActive = p25
+
+  if p25 then
+    spawn(function()
+      while _G.autoSizeActive and wait() do
+        replicatedStorage.rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
+      end
+    end)
+  end
+end, "Establece el tamaÃƒÂ±o del personaje a 1 continuamente")
+
+local vector = Vector3.new(-8741.5595703125, 121.68000030518, -5856.919921875)
+_G.autoTeleport = false
+
+local function f12()
+  local character8 = game.Players.LocalPlayer.Character
+
+  if character8 and character8:FindFirstChild("HumanoidRootPart") then
+    character8.HumanoidRootPart.CFrame = CFrame.new(vector)
+  end
+end
+
+rebirths:AddSwitch("Auto king", function(p26)
+  _G.autoTeleport = p26
+
+  if p26 then
+    task.spawn(function()
+      while _G.autoTeleport do
+        f12()
+        task.wait(0.001)
+      end
+    end)
+  end
+end):Set(false)
+
+local killing = addWindow:AddTab("Killing")
+local v72 = game
+local addSwitch = killing.AddSwitch
+local players2 = v72:GetService("Players")
+local localPlayer10 = players2.LocalPlayer
+local v73 = {}
+local v74 = {}
+local v75 = false
+local v76 = false
+local v77 = false
+local v78 = false
+local v79 = false
+local v80 = false
+local v81 = false
+local v82 = {}
+
+addSwitch(killing, "Auto Good Karma", function(p27)
+  v75 = p27
+
+  task.spawn(function()
+    while v75 do
+      local character9 = localPlayer10.Character
+      local rightHand2 = character9 and character9:FindFirstChild("RightHand")
+      local leftHand2 = character9 and character9:FindFirstChild("LeftHand")
+
+      if character9 and rightHand2 and leftHand2 then
+        for index4, value19 in ipairs(players2:GetPlayers()) do
+          if value19 ~= localPlayer10 then
+            local evilKarma = value19:FindFirstChild("evilKarma")
+            local goodKarma = value19:FindFirstChild("goodKarma")
+
+            if evilKarma and goodKarma and evilKarma:IsA("IntValue")
+              and goodKarma:IsA("IntValue") and evilKarma.Value > goodKarma.Value then
+              local character10 = value19.Character
+
+              local humanoidRootPart2 = character10
+
+              humanoidRootPart2 = character10
+                and value19.Character:FindFirstChild("HumanoidRootPart")
+
+              if humanoidRootPart2 then
+                firetouchinterest(rightHand2, humanoidRootPart2, 1)
+                firetouchinterest(leftHand2, humanoidRootPart2, 1)
+                firetouchinterest(rightHand2, humanoidRootPart2, 0)
+                firetouchinterest(leftHand2, humanoidRootPart2, 0)
+              end
+            end
+          end
+        end
+      end
+
+      task.wait(0.01)
+    end
+  end)
+end)
+
+killing:AddSwitch("Auto Bad Karma", function(p28)
+  v76 = p28
+
+  task.spawn(function()
+    while v76 do
+      local character11 = localPlayer10.Character
+      local rightHand3 = character11 and character11:FindFirstChild("RightHand")
+      local leftHand3 = character11 and character11:FindFirstChild("LeftHand")
+
+      if character11 and rightHand3 and leftHand3 then
+        for index5, value20 in ipairs(players2:GetPlayers()) do
+          if value20 ~= localPlayer10 then
+            local evilKarma2 = value20:FindFirstChild("evilKarma")
+            local goodKarma2 = value20:FindFirstChild("goodKarma")
+
+            if evilKarma2 and goodKarma2 and evilKarma2:IsA("IntValue")
+              and goodKarma2:IsA("IntValue") and goodKarma2.Value > evilKarma2.Value then
+              local character12 = value20.Character
+
+              local humanoidRootPart3 = character12
+
+              humanoidRootPart3 = character12
+                and value20.Character:FindFirstChild("HumanoidRootPart")
+
+              if humanoidRootPart3 then
+                firetouchinterest(rightHand3, humanoidRootPart3, 1)
+                firetouchinterest(leftHand3, humanoidRootPart3, 1)
+                firetouchinterest(rightHand3, humanoidRootPart3, 0)
+                firetouchinterest(leftHand3, humanoidRootPart3, 0)
+              end
+            end
+          end
+        end
+      end
+
+      task.wait(0.01)
+    end
+  end)
+end)
+
+local localPlayer11 = players.LocalPlayer
+local v83 = false
+
+killing:AddSwitch("Auto Whitelist Friends", function(p29)
+  v83 = p29
+
+  if p29 then
+    for index6, value21 in ipairs(players:GetPlayers()) do
+      if value21 ~= localPlayer11 and localPlayer11:IsFriendsWith(value21.UserId) then
+        v73[value21.Name] = true
+      end
+    end
+
+    players.PlayerAdded:Connect(function(player)
+      if v83 and player ~= localPlayer11 and localPlayer11:IsFriendsWith(player.UserId) then
+        v73[player.Name] = true
+      end
+    end)
+  else
+    for key15 in pairs(v73) do
+      local findFirstChild4 = players:FindFirstChild(key15)
+
+      if findFirstChild4 and localPlayer11:IsFriendsWith(findFirstChild4.UserId) then
+        v73[key15] = nil
+      end
+    end
+  end
+end)
+
+killing:AddTextBox("Whitelist", function(p30)
+  local findFirstChild5 = players:FindFirstChild(p30)
+
+  if findFirstChild5 then
+    v73[findFirstChild5.Name] = true
+  end
+end)
+
+killing:AddTextBox("UnWhitelist", function(p31)
+  local findFirstChild6 = players:FindFirstChild(p31)
+
+  if findFirstChild6 then
+    v73[findFirstChild6.Name] = nil
+  end
+end)
+
+killing:AddSwitch("Auto Kill", function(p32)
+  v77 = p32
+
+  task.spawn(function()
+    while v77 do
+      local character13 = localPlayer11.Character or localPlayer11.CharacterAdded:Wait()
+      local rightHand4 = character13:FindFirstChild("RightHand")
+      local leftHand4 = character13:FindFirstChild("LeftHand")
+      local punch4 = localPlayer11.Backpack:FindFirstChild("Punch")
+
+      if punch4 and not character13:FindFirstChild("Punch") then
+        punch4.Parent = character13
+      end
+
+      if rightHand4 and leftHand4 then
+        for index7, value22 in ipairs(players:GetPlayers()) do
+          if value22 ~= localPlayer11 and not v73[value22.Name] then
+            local character14 = value22.Character
+
+            local humanoidRootPart4 = character14
+              and character14:FindFirstChild("HumanoidRootPart")
+
+            if humanoidRootPart4 then
+              pcall(function()
+                firetouchinterest(rightHand4, humanoidRootPart4, 1)
+                firetouchinterest(leftHand4, humanoidRootPart4, 1)
+                firetouchinterest(rightHand4, humanoidRootPart4, 0)
+                firetouchinterest(leftHand4, humanoidRootPart4, 0)
+              end)
+            end
+          end
+        end
+      end
+
+      task.wait(0.05)
+    end
+  end)
+end)
+
+local addDropdown2 = killing:AddDropdown("Select Target", function(p33)
+  if p33 and not table.find(v74, p33) then
+    table.insert(v74, p33)
+  end
+end)
+
+killing:AddButton("Remove Target", function(p34)
+  for index8, value23 in ipairs(v74) do
+    if value23 == p34 then
+      table.remove(v74, index8)
+      break
+    end
+  end
+end)
+
+for index9, value24 in ipairs(players:GetPlayers()) do
+  if value24 ~= localPlayer11 then
+    addDropdown2:Add(value24.Name)
+    v82[value24.Name] = true
+  end
+end
+
+players.PlayerAdded:Connect(function(player2)
+  if player2 ~= localPlayer11 then
+    addDropdown2:Add(player2.Name)
+    v82[player2.Name] = true
+  end
+end)
+
+players.PlayerRemoving:Connect(function(player3)
+  if v82[player3.Name] then
+    v82[player3.Name] = nil
+    addDropdown2:Clear()
+
+    for key16 in pairs(v82) do
+      addDropdown2:Add(key16)
+    end
+  end
+
+  for i = #v74, 1, -1 do
+    if v74[i] == player3.Name then
+      table.remove(v74, i)
+    end
+  end
+end)
+
+killing:AddSwitch("Start Kill Target", function(p35)
+  v78 = p35
+
+  task.spawn(function()
+    while v78 do
+      local character15 = localPlayer11.Character or localPlayer11.CharacterAdded:Wait()
+      local punch5 = localPlayer11.Backpack:FindFirstChild("Punch")
+
+      if punch5 and not character15:FindFirstChild("Punch") then
+        punch5.Parent = character15
+      end
+
+      local waitForChild = character15:WaitForChild("RightHand", 5)
+      local waitForChild2 = character15:WaitForChild("LeftHand", 5)
+
+      if waitForChild and waitForChild2 then
+        for index10, value25 in ipairs(v74) do
+          local findFirstChild7 = players:FindFirstChild(value25)
+
+          if findFirstChild7 and findFirstChild7 ~= localPlayer11 then
+            local humanoidRootPart5 = findFirstChild7.Character
+              and findFirstChild7.Character:FindFirstChild("HumanoidRootPart")
+
+            if humanoidRootPart5 then
+              pcall(function()
+                firetouchinterest(waitForChild, humanoidRootPart5, 1)
+                firetouchinterest(waitForChild2, humanoidRootPart5, 1)
+                firetouchinterest(waitForChild, humanoidRootPart5, 0)
+                firetouchinterest(waitForChild2, humanoidRootPart5, 0)
+              end)
+            end
+          end
+        end
+      end
+
+      task.wait(0.05)
+    end
+  end)
+end)
+
+local addDropdown3 = killing:AddDropdown("Select View Target", function(p36)
+  targetPlayerName = p36
+end)
+
+for index11, value26 in ipairs(players:GetPlayers()) do
+  if value26 ~= localPlayer11 then
+    addDropdown3:Add(value26.Name)
+  end
+end
+
+players.PlayerAdded:Connect(function(player4)
+  if player4 ~= localPlayer11 then
+    addDropdown3:Add(player4.Name)
+  end
+end)
+
+players.PlayerRemoving:Connect(function(player5)
+  if player5 ~= localPlayer11 then
+    addDropdown3:Clear()
+
+    for index12, value27 in ipairs(players:GetPlayers()) do
+      if value27 ~= localPlayer11 then
+        addDropdown3:Add(value27.Name)
+      end
+    end
+  end
+end)
+
+killing:AddSwitch("View Player", function(p37)
+  v79 = p37
+
+  if not v79 then
+    local currentCamera = workspace.CurrentCamera
+
+    currentCamera.CameraSubject = localPlayer11.Character
+        and localPlayer11.Character:FindFirstChild("Humanoid")
+      or localPlayer11
+
+    return
+  end
+
+  task.spawn(function()
+    while v79 do
+      local findFirstChild8 = players:FindFirstChild(targetPlayerName)
+
+      if findFirstChild8 and findFirstChild8 ~= localPlayer11 then
+        local humanoid3 = findFirstChild8.Character
+          and findFirstChild8.Character:FindFirstChild("Humanoid")
+
+        if humanoid3 then
+          workspace.CurrentCamera.CameraSubject = humanoid3
+        end
+      end
+
+      task.wait(0.1)
+    end
+  end)
+end)
+
+killing:AddButton("Remove Punch Anim", function()
+  local v84 = { ["rbxassetid://3638729053"] = true, ["rbxassetid://3638767427"] = true }
+
+  local function f13()
+    local character16 = game.Players.LocalPlayer.Character
+
+    if not character16 or not character16:FindFirstChild("Humanoid") then
+      return
+    else
+      local humanoid4 = character16:FindFirstChild("Humanoid")
+
+      for key17, value28 in pairs(humanoid4:GetPlayingAnimationTracks()) do
+        if value28.Animation then
+          local lower3 = value28.Name:lower()
+
+          if v84[value28.Animation.AnimationId] or lower3:match("punch")
+            or lower3:match("attack") or lower3:match("right") then
+            value28:Stop()
+          end
+        end
+      end
+
+      if not _G.AnimBlockConnection then
+        _G.AnimBlockConnection = humanoid4.AnimationPlayed:Connect(function(p38)
+          if p38.Animation then
+            local lower4 = p38.Name:lower()
+
+            if v84[p38.Animation.AnimationId] or lower4:match("punch") or lower4:match("attack")
+              or lower4:match("right") then
+              p38:Stop()
+            end
+          end
+        end)
+      end
+
+      return
+    end
+  end
+
+  f13()
+
+  local function f14()
+    local function f15(p39)
+      if p39 and (p39.Name == "Punch" or p39.Name:match("Attack") or p39.Name:match("Right")) then
+        if not p39:GetAttribute("ActivatedOverride") then
+          p39:SetAttribute("ActivatedOverride", true)
+
+          local connect = p39.Activated:Connect(function()
+            task.wait(0.05)
+            local character17 = game.Players.LocalPlayer.Character
+
+            if character17 and character17:FindFirstChild("Humanoid") then
+              for key18, value29 in pairs(character17.Humanoid:GetPlayingAnimationTracks()) do
+                if value29.Animation then
+                  local lower5 = value29.Name:lower()
+
+                  if v84[value29.Animation.AnimationId] or lower5:match("punch")
+                    or lower5:match("attack") or lower5:match("right") then
+                    value29:Stop()
+                  end
+                end
+              end
+            end
+          end)
+
+          if not _G.ToolConnections then
+            _G.ToolConnections = {}
+          end
+
+          _G.ToolConnections[p39] = connect
+        end
+      end
+    end
+
+    for key19, value30 in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+      f15(value30)
+    end
+
+    local character18 = game.Players.LocalPlayer.Character
+
+    if character18 then
+      for key20, value31 in pairs(character18:GetChildren()) do
+        if value31:IsA("Tool") then
+          f15(value31)
+        end
+      end
+    end
+
+    if not _G.BackpackAddedConnection then
+      _G.BackpackAddedConnection = game.Players.LocalPlayer.Backpack.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then
+          task.wait(0.1)
+          f15(child)
+        end
+      end)
+    end
+
+    if not _G.CharacterToolAddedConnection and character18 then
+      _G.CharacterToolAddedConnection = character18.ChildAdded:Connect(function(child2)
+        if child2:IsA("Tool") then
+          task.wait(0.1)
+          f15(child2)
+        end
+      end)
+    end
+  end
+
+  f14()
+
+  if not _G.AnimMonitorConnection then
+    _G.AnimMonitorConnection = runService.Heartbeat:Connect(function()
+      if tick() % 0.5 < 0.01 then
+        local character19 = game.Players.LocalPlayer.Character
+
+        if character19 and character19:FindFirstChild("Humanoid") then
+          for key21, value32 in pairs(character19.Humanoid:GetPlayingAnimationTracks()) do
+            if value32.Animation then
+              local lower6 = value32.Name:lower()
+
+              if v84[value32.Animation.AnimationId] or lower6:match("punch")
+                or lower6:match("attack") or lower6:match("right") then
+                value32:Stop()
+              end
+            end
+          end
+        end
+      end
+    end)
+  end
+
+  if not _G.CharacterAddedConnection then
+    _G.CharacterAddedConnection = game.Players.LocalPlayer.CharacterAdded:Connect(function(character20)
+      task.wait(1)
+      f13()
+      f14()
+
+      if _G.CharacterToolAddedConnection then
+        _G.CharacterToolAddedConnection:Disconnect()
+      end
+
+      _G.CharacterToolAddedConnection = character20.ChildAdded:Connect(function(child3)
+        if child3:IsA("Tool") then
+          task.wait(0.1)
+          processTool(child3)
+        end
+      end)
+    end)
+  end
+end)
+
+function RecoveryPunch()
+  if _G.AnimBlockConnection then
+    _G.AnimBlockConnection:Disconnect()
+    _G.AnimBlockConnection = nil
+  end
+
+  if _G.AnimMonitorConnection then
+    _G.AnimMonitorConnection:Disconnect()
+    _G.AnimMonitorConnection = nil
+  end
+
+  if _G.ToolConnections then
+    for key22, value33 in pairs(_G.ToolConnections) do
+      if value33 then
+        value33:Disconnect()
+      end
+    end
+
+    _G.ToolConnections = nil
+  end
+
+  if _G.BackpackAddedConnection then
+    _G.BackpackAddedConnection:Disconnect()
+    _G.BackpackAddedConnection = nil
+  end
+
+  if _G.CharacterToolAddedConnection then
+    _G.CharacterToolAddedConnection:Disconnect()
+    _G.CharacterToolAddedConnection = nil
+  end
+
+  if _G.CharacterAddedConnection then
+    _G.CharacterAddedConnection:Disconnect()
+    _G.CharacterAddedConnection = nil
+  end
+end
+
+killing:AddButton("Recover Punch Anim", function() RecoveryPunch() end)
+
+killing:AddSwitch("Auto Equip Punch", function(p40)
+  v80 = p40
+
+  task.spawn(function()
+    while v80 do
+      local punch6 = localPlayer11.Backpack:FindFirstChild("Punch")
+
+      if punch6 then
+        punch6.Parent = localPlayer11.Character
+      end
+
+      task.wait(0.1)
+    end
+  end)
+end)
+
+killing:AddSwitch("Auto Punch [No Animation]", function(p41)
+  v81 = p41
+
+  task.spawn(function()
+    while v81 do
+      local punch7 = localPlayer11.Backpack:FindFirstChild("Punch")
+        or localPlayer11.Character and localPlayer11.Character:FindFirstChild("Punch")
+
+      if punch7 then
+        if punch7.Parent ~= localPlayer11.Character then
+          punch7.Parent = localPlayer11.Character
+        end
+
+        localPlayer11.muscleEvent:FireServer("punch", "rightHand")
+        localPlayer11.muscleEvent:FireServer("punch", "leftHand")
+      else
+        v81 = false
+      end
+
+      task.wait(0.01)
+    end
+  end)
+end)
+
+killing:AddSwitch("Auto Punch", function(p42)
+  _G.fastHitActive = p42
+
+  if p42 then
+    task.spawn(function()
+      while _G.fastHitActive do
+        local punch8 = localPlayer11.Backpack:FindFirstChild("Punch")
+
+        if punch8 then
+          punch8.Parent = localPlayer11.Character
+
+          if punch8:FindFirstChild("attackTime") then
+            punch8.attackTime.Value = 0
+          end
+        end
+
+        task.wait(0.1)
+      end
+    end)
+
+    task.spawn(function()
+      while _G.fastHitActive do
+        local punch9 = localPlayer11.Character
+          and localPlayer11.Character:FindFirstChild("Punch")
+
+        if punch9 then
+          punch9:Activate()
+        end
+
+        task.wait(0.1)
+      end
+    end)
+  else
+    local punch10 = localPlayer11.Character and localPlayer11.Character:FindFirstChild("Punch")
+
+    if punch10 then
+      punch10.Parent = localPlayer11.Backpack
+    end
+  end
+end)
+
+killing:AddSwitch("Fast Punch", function(p43)
+  _G.autoPunchActive = p43
+
+  if p43 then
+    task.spawn(function()
+      while _G.autoPunchActive do
+        local punch11 = localPlayer11.Backpack:FindFirstChild("Punch")
+
+        if punch11 then
+          punch11.Parent = localPlayer11.Character
+
+          if punch11:FindFirstChild("attackTime") then
+            punch11.attackTime.Value = 0
+          end
+        end
+
+        task.wait()
+      end
+    end)
+
+    task.spawn(function()
+      while _G.autoPunchActive do
+        local punch12 = localPlayer11.Character
+          and localPlayer11.Character:FindFirstChild("Punch")
+
+        if punch12 then
+          punch12:Activate()
+        end
+
+        task.wait()
+      end
+    end)
+  else
+    local punch13 = localPlayer11.Character and localPlayer11.Character:FindFirstChild("Punch")
+
+    if punch13 then
+      punch13.Parent = localPlayer11.Backpack
+    end
+  end
+end)
+
+local spyStats = addWindow:AddTab("Spy Stats")
+local match = ""
+
+spyStats:AddDropdown("Select Player", function(p44)
+  match = p44:match("| (.+)")
+  previousValues = {}
+end)
+
+for key23, value34 in pairs(players:GetPlayers()) do
+end
+
+local function f16(p45)
+  return tostring(p45):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+end
+
+local f17
+
+local function f18(p46)
+  return "[ " .. f16(p46) .. " | " .. f17(p46) .. " ]"
+end
+
+function f17(p47)
+  local v85 = p47
+  local v86 = { "", "K", "M", "B", "T", "Qa", "Qi" }
+  local v87 = 1
+
+  while v85 >= 1000 do
+    v85 = v85 / 1000
+    v87 = v87 + 1
+  end
+
+  return string.format("%.2f", v85) .. v86[v87]
+end
+
+local addLabel = spyStats:AddLabel("")
+local addLabel2 = spyStats:AddLabel("")
+local addLabel3 = spyStats:AddLabel("")
+local addLabel4 = spyStats:AddLabel("")
+local addLabel5 = spyStats:AddLabel("")
+local addLabel6 = spyStats:AddLabel("")
+local addLabel7 = spyStats:AddLabel("")
+local addLabel8 = spyStats:AddLabel("")
+local addLabel9 = spyStats:AddLabel("")
+local addLabel10 = spyStats:AddLabel("")
+local addLabel11 = spyStats:AddLabel("")
+local addLabel12 = spyStats:AddLabel("")
+
+task.spawn(function()
+  while task.wait(0) do
+    if match ~= "" then
+      local findFirstChild9 = game.Players:FindFirstChild(match)
+
+      if findFirstChild9 then
+        if findFirstChild9:FindFirstChild("Gems") then
+          addLabel2.Text = "Gems: " .. f18(findFirstChild9.Gems.Value)
+        end
+
+        if findFirstChild9:FindFirstChild("Agility") then
+          addLabel4.Text = "Agility: " .. f18(findFirstChild9.Agility.Value)
+        end
+
+        if findFirstChild9:FindFirstChild("Durability") then
+          addLabel5.Text = "Durability: " .. f18(findFirstChild9.Durability.Value)
+        end
+
+        if findFirstChild9:FindFirstChild("muscleKingTime") then
+          addLabel7.Text = "Muscle King Time: " .. f18(findFirstChild9.muscleKingTime.Value)
+        end
+
+        if findFirstChild9:FindFirstChild("customSize") then
+          addLabel9.Text = "Custom Size: " .. f18(findFirstChild9.customSize.Value)
+        end
+
+        if findFirstChild9:FindFirstChild("customSpeed") then
+          addLabel10.Text = "Custom Speed: " .. f18(findFirstChild9.customSpeed.Value)
+        end
+
+        if findFirstChild9:FindFirstChild("evilKarma") then
+          addLabel11.Text = "Evil Karma: " .. f18(findFirstChild9.evilKarma.Value)
+        end
+
+        if findFirstChild9:FindFirstChild("goodKarma") then
+          addLabel12.Text = "Good Karma: " .. f18(findFirstChild9.goodKarma.Value)
+        end
+
+        local leaderstats2 = findFirstChild9:FindFirstChild("leaderstats")
+
+        if leaderstats2 then
+          if leaderstats2:FindFirstChild("Strength") then
+            addLabel.Text = "Strength: " .. f18(leaderstats2.Strength.Value)
+          end
+
+          if leaderstats2:FindFirstChild("Rebirths") then
+            addLabel3.Text = "Rebirth: " .. f18(leaderstats2.Rebirths.Value)
+          end
+
+          if leaderstats2:FindFirstChild("Kills") then
+            addLabel6.Text = "Kills: " .. f18(leaderstats2.Kills.Value)
+          end
+        end
+
+        if findFirstChild9:FindFirstChild("currentMap") then
+          addLabel8.Text = "Current Map: " .. tostring(findFirstChild9.currentMap.Value)
+        else
+          addLabel8.Text = "Current Map: Aucune donnÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e"
+        end
+      end
+    end
+  end
+end)
+
+local petShop = addWindow:AddTab("Pet Shop")
+local v88 = "Neon Guardian"
+
+local addDropdown4 = petShop:AddDropdown("Select Pet", function(p48) v88 = p48 end)
+addDropdown4:Add("Neon Guardian")
+addDropdown4:Add("Blue Birdie")
+addDropdown4:Add("Blue Bunny")
+addDropdown4:Add("Blue Firecaster")
+addDropdown4:Add("Blue Pheonix")
+addDropdown4:Add("Crimson Falcon")
+addDropdown4:Add("Cybernetic Showdown Dragon")
+addDropdown4:Add("Dark Golem")
+addDropdown4:Add("Dark Legends Manticore")
+addDropdown4:Add("Dark Vampy")
+addDropdown4:Add("Darkstar Hunter")
+addDropdown4:Add("Eternal Strike Leviathan")
+addDropdown4:Add("Frostwave Legends Penguin")
+addDropdown4:Add("Gold Warrior")
+addDropdown4:Add("Golden Pheonix")
+addDropdown4:Add("Golden Viking")
+addDropdown4:Add("Green Butterfly")
+addDropdown4:Add("Green Firecaster")
+addDropdown4:Add("Infernal Dragon")
+addDropdown4:Add("Lightning Strike Phantom")
+addDropdown4:Add("Magic Butterfly")
+addDropdown4:Add("Muscle Sensei")
+addDropdown4:Add("Orange Hedgehog")
+addDropdown4:Add("Orange Pegasus")
+addDropdown4:Add("Phantom Genesis Dragon")
+addDropdown4:Add("Purple Dragon")
+addDropdown4:Add("Purple Falcon")
+addDropdown4:Add("Red Dragon")
+addDropdown4:Add("Red Firecaster")
+addDropdown4:Add("Red Kitty")
+addDropdown4:Add("Silver Dog")
+addDropdown4:Add("Ultimate Supernova Pegasus")
+addDropdown4:Add("Ultra Birdie")
+addDropdown4:Add("White Pegasus")
+addDropdown4:Add("White Pheonix")
+addDropdown4:Add("Yellow Butterfly")
+
+petShop:AddSwitch("Auto Open Pet", function(p49)
+  _G.AutoHatchPet = p49
+
+  if p49 then
+    spawn(function()
+      while _G.AutoHatchPet and v88 ~= "" do
+        local findFirstChild10 = replicatedStorage.cPetShopFolder:FindFirstChild(v88)
+
+        if findFirstChild10 then
+          replicatedStorage.cPetShopRemote:InvokeServer(findFirstChild10)
+        end
+
+        task.wait(0.1)
+      end
+    end)
+  end
+end)
+
+local v89 = "Blue Aura"
+
+local addDropdown5 = petShop:AddDropdown("Select Aura", function(p50) v89 = p50 end)
+addDropdown5:Add("Astral Electro")
+addDropdown5:Add("Azure Tundra")
+addDropdown5:Add("Blue Aura")
+addDropdown5:Add("Dark Electro")
+addDropdown5:Add("Dark Lightning")
+addDropdown5:Add("Dark Storm")
+addDropdown5:Add("Electro")
+addDropdown5:Add("Enchanted Mirage")
+addDropdown5:Add("Entropic Blast")
+addDropdown5:Add("Eternal Megastrike")
+addDropdown5:Add("Grand Supernova")
+addDropdown5:Add("Green Aura")
+addDropdown5:Add("Inferno")
+addDropdown5:Add("Lightning")
+addDropdown5:Add("Muscle King")
+addDropdown5:Add("Power Lightning")
+addDropdown5:Add("Purple Aura")
+addDropdown5:Add("Purple Nova")
+addDropdown5:Add("Red Aura")
+addDropdown5:Add("Supernova")
+addDropdown5:Add("Ultra Inferno")
+addDropdown5:Add("Ultra Mirage")
+addDropdown5:Add("Unstable Mirage")
+addDropdown5:Add("Yellow Aura")
+
+petShop:AddSwitch("Auto Open Aura", function(p51)
+  _G.AutoHatchAura = p51
+
+  if p51 then
+    spawn(function()
+      while _G.AutoHatchAura and v89 ~= "" do
+        local findFirstChild11 = replicatedStorage.cPetShopFolder:FindFirstChild(v89)
+
+        if findFirstChild11 then
+          replicatedStorage.cPetShopRemote:InvokeServer(findFirstChild11)
+        end
+
+        task.wait(0.1)
+      end
+    end)
+  end
+end)
+
+local gift = addWindow:AddTab("Gift")
+gift:AddLabel("Gifting Protein egg:").TextSize = 22
+
+local proteinEggs0 = gift:AddLabel("Protein Eggs: 0")
+proteinEggs0.TextSize = 20
+
+local v90 = 0
+local v91
+
+local addDropdown6 = gift:AddDropdown("Player to Gift Eggs", function(p52)
+  for index13, value35 in ipairs(players:GetPlayers()) do
+    if value35.DisplayName == p52 then
+      v91 = value35
+      break
+    end
+  end
+end)
+
+for index14, value36 in ipairs(players:GetPlayers()) do
+  if value36 ~= players.LocalPlayer then
+    addDropdown6:Add(value36.DisplayName)
+  end
+end
+
+players.PlayerAdded:Connect(function(player6)
+  if player6 ~= players.LocalPlayer then
+    addDropdown6:Add(player6.DisplayName)
+  end
+end)
+
+gift:AddTextBox("Amount of Eggs", function(p53) v90 = tonumber(p53) or 0 end)
+
+gift:AddButton("Gift Eggs", function()
+  if v91 and v90 > 0 then
+    for j = 1, v90 do
+      local proteinEgg = players.LocalPlayer.consumablesFolder:FindFirstChild("Protein Egg")
+
+      if proteinEgg then
+        replicatedStorage.rEvents.giftRemote:InvokeServer("giftRequest", v91, proteinEgg)
+        task.wait(0.1)
+      end
+    end
+  end
+end)
+
+gift:AddLabel("Gifting Tropical Shakes:").TextSize = 22
+
+local tropicalShakes0 = gift:AddLabel("Tropical Shakes: 0")
+tropicalShakes0.TextSize = 18
+
+local v92 = 0
+local v93
+
+local addDropdown7 = gift:AddDropdown("Player to Gift Tropical Shakes", function(p54)
+  for index15, value37 in ipairs(players:GetPlayers()) do
+    if value37.DisplayName == p54 then
+      v93 = value37
+      break
+    end
+  end
+end)
+
+for index16, value38 in ipairs(players:GetPlayers()) do
+  if value38 ~= players.LocalPlayer then
+    addDropdown7:Add(value38.DisplayName)
+  end
+end
+
+players.PlayerAdded:Connect(function(player7)
+  if player7 ~= players.LocalPlayer then
+    addDropdown7:Add(player7.DisplayName)
+  end
+end)
+
+gift:AddTextBox("Tropical Shakes gift", function(p55) v92 = tonumber(p55) or 0 end)
+
+gift:AddButton("Gift Tropical Shakes", function()
+  if v93 and v92 > 0 then
+    for k = 1, v92 do
+      local tropicalShake = players.LocalPlayer.consumablesFolder:FindFirstChild("Tropical Shake")
+
+      if tropicalShake then
+        replicatedStorage.rEvents.giftRemote:InvokeServer("giftRequest", v93, tropicalShake)
+        task.wait(0.1)
+      end
+    end
+  end
+end)
+
+local function f19()
+  local count = 0
+  local count2 = 0
+  local backpack3 = players.LocalPlayer:WaitForChild("Backpack")
+
+  if backpack3 then
+    for index17, value39 in ipairs(backpack3:GetChildren()) do
+      if value39.Name == "Protein Egg" then
+        count = count + 1
+      elseif value39.Name == "Tropical Shake"
+        or value39.Name == "PiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â±as" then
+        count2 = count2 + 1
+      end
+    end
+  end
+
+  proteinEggs0.Text = "Protein Eggs: " .. count
+  tropicalShakes0.Text = "Tropical Shakes: " .. count2
+end
+
+task.spawn(function()
+  while true do
+    f19()
+    task.wait(0.25)
+  end
+end)
+
+local v94 = {
+  "Tropical Shake", "Energy Shake", "Protein Bar", "TOUGH Bar", "Protein Shake", "ULTRA Shake",
+  "Energy Bar",
+}
+
+local f20
+
+local function f21(p56)
+  local v95 = {}
+
+  for index18, value40 in ipairs(v94) do
+    table.insert(v95, value40)
+  end
+
+  for m = #v95, 2, -1 do
+    local v96 = math.random(m)
+    local v97 = v95[m]
+
+    v95[m] = v95[v96]
+    v95[v96] = v97
+  end
+
+  for n = 1, math.min(p56, #v95) do
+    local findFirstChild12 = localPlayer.Character:FindFirstChild(v95[n])
+
+    local findFirstChild13 = findFirstChild12
+    findFirstChild13 = findFirstChild12 or localPlayer.Backpack:FindFirstChild(v95[n])
+
+    if findFirstChild13 then
+      local v98 = f20(v95[n])
+      localPlayer.muscleEvent:FireServer(v98, findFirstChild13)
+    end
+  end
+end
+
+function f20(p57)
+  local v99 = {}
+
+  for match2 in p57:gmatch("%S+") do
+    table.insert(v99, match2:lower())
+  end
+
+  for i6 = 2, #v99 do
+    local sub = v99[i6]:sub(1, 1)
+    local v100 = v99[i6]
+    v99[i6] = sub:upper() .. v100:sub(2)
+  end
+
+  return table.concat(v99)
+end
+
+local v101 = false
+
+task.spawn(function()
+  while true do
+    if v101 then
+      f21(4)
+      task.wait(0.5)
+    else
+      task.wait(0.5)
+    end
+  end
+end)
+
+gift:AddLabel("")
+
+gift:AddButton("Eat Everything", function(p58)
+  v101 = p58
+
+  if p58 then
+    f21(4)
+  end
+end)
+
+local teleport = addWindow:AddTab("Teleport")
+
+teleport:AddButton("Spawn", function()
+  local localPlayer12 = game.Players.LocalPlayer
+
+  local character21 = localPlayer12.Character or localPlayer12.CharacterAdded:Wait()
+  character21:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(2, 8, 115)
+
+  starterGui:SetCore("SendNotification", {
+    Title = "Teletransporte",
+    Text = "Teleported to Spawn",
+    Duration = 0,
+  })
+end)
+
+teleport:AddButton("Secret Area", function()
+  local localPlayer13 = game.Players.LocalPlayer
+
+  local character22 = localPlayer13.Character or localPlayer13.CharacterAdded:Wait()
+  character22:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(1947, 2, 6191)
+
+  starterGui:SetCore("SendNotification", {
+    Title = "Teletransporte",
+    Text = "Teleported to Secret Area",
+    Duration = 0,
+  })
+end)
+
+teleport:AddButton("Tiny Island", function()
+  local localPlayer14 = game.Players.LocalPlayer
+
+  local character23 = localPlayer14.Character or localPlayer14.CharacterAdded:Wait()
+  character23:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(-34, 7, 1903)
+
+  starterGui:SetCore("SendNotification", {
+    Title = "Teletransporte",
+    Text = "Teleported to Tiny Island",
+    Duration = 0,
+  })
+end)
+
+teleport:AddButton("Frozen Island", function()
+  local localPlayer15 = game.Players.LocalPlayer
+
+  local character24 = localPlayer15.Character or localPlayer15.CharacterAdded:Wait()
+
+  character24:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(
+    -2600.00244, 3.67686558, -403.884369, 0.0873617008, 1.0482899e-9, 0.99617666, 3.07204253e-8,
+    1, -3.7464023e-9, -0.99617666, 3.09302628e-8, 0.0873617008
+  )
+
+  starterGui:SetCore("SendNotification", {
+    Title = "Teletransporte",
+    Text = "Teleported to Frozen Island",
+    Duration = 0,
+  })
+end)
+
+teleport:AddButton("Mythical Island", function()
+  local localPlayer16 = game.Players.LocalPlayer
+
+  local character25 = localPlayer16.Character or localPlayer16.CharacterAdded:Wait()
+  character25:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(2255, 7, 1071)
+
+  starterGui:SetCore("SendNotification", {
+    Title = "Teletransporte",
+    Text = "Teleported to Mythical Island",
+    Duration = 0,
+  })
+end)
+
+teleport:AddButton("Hell Island", function()
+  local localPlayer17 = game.Players.LocalPlayer
+
+  local character26 = localPlayer17.Character or localPlayer17.CharacterAdded:Wait()
+  character26:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(-6768, 7, -1287)
+
+  starterGui:SetCore("SendNotification", {
+    Title = "Teletransporte",
+    Text = "Teleported to Hell Island",
+    Duration = 0,
+  })
+end)
+
+teleport:AddButton("Legend Island", function()
+  local localPlayer18 = game.Players.LocalPlayer
+
+  local character27 = localPlayer18.Character or localPlayer18.CharacterAdded:Wait()
+  character27:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(4604, 991, -3887)
+
+  starterGui:SetCore("SendNotification", {
+    Title = "Teletransporte",
+    Text = "Teleported to Legend Island",
+    Duration = 0,
+  })
+end)
+
+teleport:AddButton("Muscle King Island", function()
+  local localPlayer19 = game.Players.LocalPlayer
+
+  local character28 = localPlayer19.Character or localPlayer19.CharacterAdded:Wait()
+  character28:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(-8646, 17, -5738)
+
+  starterGui:SetCore("SendNotification", {
+    Title = "Teletransporte",
+    Text = "Teleported to Muscle King",
+    Duration = 0,
+  })
+end)
+
+teleport:AddButton("Jungle Island", function()
+  local localPlayer20 = game.Players.LocalPlayer
+
+  local character29 = localPlayer20.Character or localPlayer20.CharacterAdded:Wait()
+  character29:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(-8659, 6, 2384)
+
+  starterGui:SetCore("SendNotification", {
+    Title = "Teletransporte",
+    Text = "Teleported to Jungle Island",
+    Duration = 0,
+  })
+end)
+
+teleport:AddButton("Brawl Lava", function()
+  local localPlayer21 = game.Players.LocalPlayer
+
+  local character30 = localPlayer21.Character or localPlayer21.CharacterAdded:Wait()
+  character30:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(4471, 119, -8836)
+
+  starterGui:SetCore("SendNotification", {
+    Title = "Teletransporte",
+    Text = "Teleported to Brawl Lava",
+    Duration = 0,
+  })
+end)
+
+teleport:AddButton("Brawl Desert", function()
+  local localPlayer22 = game.Players.LocalPlayer
+
+  local character31 = localPlayer22.Character or localPlayer22.CharacterAdded:Wait()
+  character31:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(960, 17, -7398)
+
+  starterGui:SetCore("SendNotification", {
+    Title = "Teletransporte",
+    Text = "Teleported to Brawl Desert",
+    Duration = 0,
+  })
+end)
+
+teleport:AddButton("Brawl Regular", function()
+  local localPlayer23 = game.Players.LocalPlayer
+
+  local character32 = localPlayer23.Character or localPlayer23.CharacterAdded:Wait()
+  character32:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(-1849, 20, -6335)
+
+  starterGui:SetCore("SendNotification", {
+    Title = "Teletransporte",
+    Text = "Teleported to Brawl Regular",
+    Duration = 0,
+  })
+end)
+
+stats = addWindow:AddTab("Stats")
+local localPlayer24 = game.Players.LocalPlayer
+local leaderstats3 = localPlayer24:WaitForChild("leaderstats")
+local strength = leaderstats3:WaitForChild("Strength")
+local rebirths2 = leaderstats3:WaitForChild("Rebirths")
+local durability = localPlayer24:WaitForChild("Durability")
+local kills = leaderstats3:WaitForChild("Kills")
+local agility = localPlayer24:WaitForChild("Agility")
+local evilKarma3 = localPlayer24:WaitForChild("evilKarma")
+local goodKarma3 = localPlayer24:WaitForChild("goodKarma")
+local brawls = leaderstats3:WaitForChild("Brawls")
+
+local function f22(p59)
+  local v102 = p59
+  local v103 = { "", "K", "M", "B", "T", "Qa", "Qi" }
+  local v104 = 1
+
+  while v102 >= 1000 and v104 < #v103 do
+    v102 = v102 / 1000
+    v104 = v104 + 1
+  end
+
+  return string.format("%.2f%s", v102, v103[v104])
+end
+
+local v105 = stats
+v105:AddLabel("Session Statistics").TextSize = 30
+
+local sessionTime0d0h0m0s = stats:AddLabel("Session Time: 0d 0h 0m 0s")
+sessionTime0d0h0m0s.TextSize = 20
+
+local customTimerNotStarted = stats:AddLabel("Custom Timer: Not started")
+customTimerNotStarted.TextSize = 20
+
+local v106 = false
+local v107 = 0
+local v108 = 0
+
+stats:AddButton("Start/Stop Custom Timer", function()
+  if not v106 then
+    v106 = true
+    v107 = tick() - v108
+  else
+    v106 = false
+    v108 = tick() - v107
+  end
+end)
+
+stats:AddButton("Reset Custom Timer", function()
+  v106 = false
+  v107 = 0
+  v108 = 0
+  customTimerNotStarted.Text = "Custom Timer: Not started"
+end)
+
+local v109 = false
+stats:AddButton("Reset Session Stats", function() v109 = true end)
+
+local v110 = stats
+v110:AddLabel("------------------").TextSize = 14
+
+local v111 = stats
+v111:AddLabel("Projected Stats").TextSize = 30
+
+local strengthPace = stats:AddLabel("Strength Pace: -")
+strengthPace.TextSize = 20
+
+local durabilityPace = stats:AddLabel("Durability Pace: -")
+durabilityPace.TextSize = 20
+
+local rebirthPace = stats:AddLabel("Rebirth Pace: -")
+rebirthPace.TextSize = 20
+
+local v112 = stats
+v112:AddLabel("------------------").TextSize = 14
+
+local v113 = stats
+v113:AddLabel("Leaderboard Stats").TextSize = 30
+
+local strength2 = stats:AddLabel("Strength: -")
+strength2.TextSize = 20
+
+local rebirths3 = stats:AddLabel("Rebirths: -")
+rebirths3.TextSize = 20
+
+local kills2 = stats:AddLabel("Kills: -")
+kills2.TextSize = 20
+
+local brawls2 = stats:AddLabel("Brawls: -")
+brawls2.TextSize = 20
+
+local v114 = stats
+v114:AddLabel("------------------").TextSize = 14
+
+local v115 = stats
+v115:AddLabel("Player Stats").TextSize = 30
+
+local goodKarma4 = stats:AddLabel("Good Karma: -")
+goodKarma4.TextSize = 20
+
+local evilKarma4 = stats:AddLabel("Evil Karma: -")
+evilKarma4.TextSize = 20
+
+local durability2 = stats:AddLabel("Durability: -")
+durability2.TextSize = 20
+
+local agility2 = stats:AddLabel("Agility: -")
+agility2.TextSize = 20
+
+local v116 = tick()
+local value41 = strength.Value
+local value42 = durability.Value
+local value43 = rebirths2.Value
+local value44 = kills.Value
+local value45 = agility.Value
+local value46 = evilKarma3.Value
+local value47 = goodKarma3.Value
+local value48 = brawls.Value
+
+task.spawn(function()
+  local v117 = 0
+
+  while task.wait(0.2) do
+    local v118 = tick() - v116
+    local v119 = math.floor(v118 / 86400)
+    local v120 = math.floor(v118 % 86400 / 3600)
+    local v121 = math.floor(v118 % 3600 / 60)
+    local v122 = math.floor(v118 % 60)
+
+    sessionTime0d0h0m0s.Text = string.format(
+      "Session Time: %dd %dh %dm %ds", v119, v120, v121, v122
+    )
+
+    if v106 then
+      v108 = tick() - v107
+    end
+
+    if v108 > 0 then
+      local v123 = math.floor(v108 / 86400)
+      local v124 = math.floor(v108 % 86400 / 3600)
+      local v125 = math.floor(v108 % 3600 / 60)
+      local v126 = math.floor(v108 % 60)
+
+      customTimerNotStarted.Text = string.format(
+        "Custom Timer: %dd %dh %dm %ds", v123, v124, v125, v126
+      )
+    end
+
+    if v109 then
+      v116 = tick()
+      value41 = strength.Value
+      value42 = durability.Value
+      value43 = rebirths2.Value
+      value44 = kills.Value
+      value45 = agility.Value
+      value46 = evilKarma3.Value
+      value47 = goodKarma3.Value
+      value48 = brawls.Value
+      v109 = false
+    end
+
+    local value49 = strength.Value
+    local value50 = rebirths2.Value
+    local value51 = durability.Value
+    local value52 = kills.Value
+    local value53 = agility.Value
+    local value54 = evilKarma3.Value
+    local value55 = goodKarma3.Value
+    local value56 = brawls.Value
+    local v127 = value49 - value41
+    local v128 = value51 - value42
+    local v129 = value50 - value43
+    local v130 = value44
+    local v131 = value45
+    local v132 = value46
+    local v133 = value47
+    local v134 = value48
+    strength2.Text = "Strength: " .. f22(value49) .. " | +" .. f22(v127)
+    rebirths3.Text = "Rebirths: " .. f22(value50) .. " | +" .. f22(v129)
+    kills2.Text = "Kills: " .. f22(value52) .. " | +" .. f22(value52 - v130)
+    brawls2.Text = "Brawls: " .. f22(value56) .. " | +" .. f22(value56 - v134)
+    goodKarma4.Text = "Good Karma: " .. f22(value55) .. " | +" .. f22(value55 - v133)
+    evilKarma4.Text = "Evil Karma: " .. f22(value54) .. " | +" .. f22(value54 - v132)
+    durability2.Text = "Durability: " .. f22(value51) .. " | +" .. f22(v128)
+    agility2.Text = "Agility: " .. f22(value53) .. " | +" .. f22(value53 - v131)
+
+    if tick() - v117 >= 6 then
+      v117 = tick()
+      local v135 = v127 / v118
+      local v136 = v128 / v118
+      local v137 = v129 / v118
+
+      strengthPace.Text = "Strength Pace: " .. f22(math.floor(v135 * 3600)) .. "/h | "
+        .. f22(math.floor(v135 * 86400)) .. "/d"
+
+      durabilityPace.Text = "Durability Pace: " .. f22(math.floor(v136 * 3600)) .. "/h | "
+        .. f22(math.floor(v136 * 86400)) .. "/d"
+
+      rebirthPace.Text = "Rebirth Pace: " .. f22(math.floor(v137 * 3600)) .. "/h | "
+        .. f22(math.floor(v137 * 86400)) .. "/d"
+    end
+  end
+end)
+
+Misc = addWindow:AddTab("Misc")
+
+local misc = Misc
+misc:AddLabel("----Misc 1----").TextSize = 22
+
+local walkSpeed = 125
+
+Misc:AddTextBox("Speed", function(p60)
+  walkSpeed = tonumber(p60) or 125
+
+  if getgenv().AutoSpeed and game.Players.LocalPlayer.Character
+    and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = walkSpeed
+  end
+end, { clear = false, default = "125", placeholder = "Enter Speed..." })
+
+Misc:AddSwitch("Set Speed", function(autoSpeed)
+  getgenv().AutoSpeed = autoSpeed
+
+  while getgenv().AutoSpeed do
+    if game.Players.LocalPlayer.Character
+      and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+      game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = walkSpeed
+    end
+
+    task.wait()
+  end
+end)
+
+game.Players.LocalPlayer.CharacterAdded:Connect(function(character33)
+  if getgenv().AutoSpeed then
+    character33:WaitForChild("Humanoid").WalkSpeed = walkSpeed
+  end
+end)
+
+local v138 = 2
+
+Misc:AddTextBox("Size", function(p61)
+  v138 = tonumber(p61) or 2
+
+  if getgenv().AutoSize then
+    replicatedStorage.rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", v138)
+  end
+end, { clear = false, default = "2", placeholder = "Enter Size..." })
+
+Misc:AddSwitch("Set Size", function(autoSize)
+  getgenv().AutoSize = autoSize
+
+  while getgenv().AutoSize do
+    replicatedStorage.rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", v138)
+    task.wait(0.1)
+  end
+end)
+
+local misc2 = Misc
+misc2:AddLabel("----Misc 2----").TextSize = 23
+
+Misc:AddSwitch("Anti-AFK", function(p62)
+  local instance, instance2, v139
+
+  if p62 then
+    local localPlayer25 = players.LocalPlayer
+
+    _G.afkGui = Instance.new("ScreenGui", localPlayer25:WaitForChild("PlayerGui"))
+    _G.afkGui.Name = "AntiAFKGui"
+    _G.afkGui.ResetOnSpawn = false
+
+    instance = Instance.new("TextLabel", _G.afkGui)
+    instance.Size = UDim2.new(0, 200, 0, 50)
+    instance.Position = UDim2.new(0.5, -100, 0, -50)
+    instance.Text = "ANTI AFK"
+    instance.TextColor3 = Color3.fromRGB(50, 255, 50)
+    instance.Font = Enum.Font.GothamBold
+    instance.TextSize = 20
+    instance.BackgroundTransparency = 1
+    instance.TextTransparency = 1
+
+    instance2 = Instance.new("TextLabel", _G.afkGui)
+    instance2.Size = UDim2.new(0, 200, 0, 30)
+    instance2.Position = UDim2.new(0.5, -100, 0, -20)
+    instance2.Text = "00:00:00"
+    instance2.TextColor3 = Color3.fromRGB(255, 255, 255)
+    instance2.Font = Enum.Font.GothamBold
+    instance2.TextSize = 18
+    instance2.BackgroundTransparency = 1
+    instance2.TextTransparency = 1
+
+    v139 = tick()
+
+    task.spawn(function()
+      while _G.afkGui and _G.afkGui.Parent do
+        local v140 = tick() - v139
+        local v141 = math.floor(v140 / 3600)
+        local v142 = math.floor(v140 % 3600 / 60)
+        local v143 = math.floor(v140 % 60)
+        instance2.Text = string.format("%02d:%02d:%02d", v141, v142, v143)
+        task.wait(1)
+      end
+    end)
+
+    task.spawn(function()
+      while _G.afkGui and _G.afkGui.Parent do
+        for i7 = 0, 1, 0.02 do
+          instance.TextTransparency = 1 - i7
+          instance2.TextTransparency = 1 - i7
+          task.wait(0.015)
+        end
+
+        task.wait(1.5)
+
+        for i8 = 0, 1, 0.02 do
+          instance.TextTransparency = i8
+          instance2.TextTransparency = i8
+          task.wait(0.015)
+        end
+
+        task.wait(1)
+      end
+    end)
+
+    _G.afkConnection = players.LocalPlayer.Idled:Connect(function()
+      virtualUser:Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
+      task.wait(1)
+      virtualUser:Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
+    end)
+  else
+    if _G.afkConnection then
+      _G.afkConnection:Disconnect()
+      _G.afkConnection = nil
+    end
+
+    if _G.afkGui then
+      _G.afkGui:Destroy()
+      _G.afkGui = nil
+    end
+  end
+end):Set(true)
+
+Misc:AddSwitch("Anti Knockback", function(p63)
+  if p63 then
+    local humanoidRootPart6 = game.Workspace:FindFirstChild(game.Players.LocalPlayer.Name):FindFirstChild("HumanoidRootPart")
+
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(100000, 0, 100000)
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.P = 1250
+    bodyVelocity.Parent = humanoidRootPart6
+  else
+    local bodyVelocity2 = game.Workspace:FindFirstChild(game.Players.LocalPlayer.Name):FindFirstChild("HumanoidRootPart"):FindFirstChild("BodyVelocity")
+
+    if bodyVelocity2 and bodyVelocity2.MaxForce == Vector3.new(100000, 0, 100000) then
+      bodyVelocity2:Destroy()
+    end
+  end
+end):Set(true)
+
+Misc:AddButton("Anti Lag", function()
+  for key24, value57 in pairs(game:GetDescendants()) do
+    if value57:IsA("ParticleEmitter") or value57:IsA("Smoke") or value57:IsA("Fire")
+      or value57:IsA("Sparkles") then
+      value57.Enabled = false
+    end
+  end
+
+  lighting.GlobalShadows = false
+  lighting.FogEnd = 9000000000
+  lighting.Brightness = 0
+
+  settings().Rendering.QualityLevel = 1
+
+  for key25, value58 in pairs(game:GetDescendants()) do
+    if value58:IsA("Decal") or value58:IsA("Texture") then
+      value58.Transparency = 1
+    elseif value58:IsA("BasePart") and not value58:IsA("MeshPart") then
+      value58.Material = Enum.Material.SmoothPlastic
+
+      if value58.Parent
+        and (value58.Parent:FindFirstChild("Humanoid")
+          or value58.Parent.Parent:FindFirstChild("Humanoid")) then
+      else
+        value58.Reflectance = 0
+      end
+    end
+  end
+
+  for key26, value59 in pairs(lighting:GetChildren()) do
+    if value59:IsA("BlurEffect") or value59:IsA("SunRaysEffect")
+      or value59:IsA("ColorCorrectionEffect") or value59:IsA("BloomEffect")
+      or value59:IsA("DepthOfFieldEffect") then
+      value59.Enabled = false
+    end
+  end
+
+  starterGui:SetCore("SendNotification", {
+    Title = "anti lag Activate",
+    Text = "Full optimization applied!",
+    Duration = 5,
+  })
+end)
+
+Misc:AddButton("Full Optimization", function()
+  for key27, value60 in pairs(game.Players.LocalPlayer:WaitForChild("PlayerGui"):GetChildren()) do
+    if value60:IsA("ScreenGui") then
+      value60:Destroy()
+    end
+  end
+
+  local function f23()
+    for key28, value61 in pairs(lighting:GetChildren()) do
+      if value61:IsA("Sky") then
+        value61:Destroy()
+      end
+    end
+
+    local darkSky = Instance.new("Sky")
+    darkSky.Name = "DarkSky"
+    darkSky.SkyboxBk = "rbxassetid://0"
+    darkSky.SkyboxDn = "rbxassetid://0"
+    darkSky.SkyboxFt = "rbxassetid://0"
+    darkSky.SkyboxLf = "rbxassetid://0"
+    darkSky.SkyboxRt = "rbxassetid://0"
+    darkSky.SkyboxUp = "rbxassetid://0"
+    darkSky.Parent = lighting
+
+    lighting.Brightness = 0
+    lighting.ClockTime = 0
+    lighting.TimeOfDay = "00:00:00"
+    lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+    lighting.Ambient = Color3.new(0, 0, 0)
+    lighting.FogColor = Color3.new(0, 0, 0)
+    lighting.FogEnd = 100
+
+    task.spawn(function()
+      while true do
+        wait(5)
+
+        if not lighting:FindFirstChild("DarkSky") then
+          darkSky:Clone().Parent = lighting
+        end
+
+        lighting.Brightness = 0
+        lighting.ClockTime = 0
+        lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+        lighting.Ambient = Color3.new(0, 0, 0)
+        lighting.FogColor = Color3.new(0, 0, 0)
+        lighting.FogEnd = 100
+      end
+    end)
+  end
+
+  local function f24()
+    for key29, value62 in pairs(workspace:GetDescendants()) do
+      if value62:IsA("ParticleEmitter") then
+        value62:Destroy()
+      end
+    end
+  end
+
+  local function f25()
+    for key30, value63 in pairs(workspace:GetDescendants()) do
+      if value63:IsA("PointLight") or value63:IsA("SpotLight") or value63:IsA("SurfaceLight") then
+        value63:Destroy()
+      end
+    end
+  end
+
+  f24()
+  f25()
+  f23()
+end)
+
+local misc3 = Misc
+misc3:AddLabel("----Misc 3----").TextSize = 23
+
+Misc:AddSwitch("Lock Position", function(p64)
+  local cframe2
+
+  if p64 then
+    cframe2 = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+    local v144 = getgenv()
+
+    v144.posLock = runService.Heartbeat:Connect(function()
+      if game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cframe2
+      end
+    end)
+  elseif getgenv().posLock then
+    getgenv().posLock:Disconnect()
+    getgenv().posLock = nil
+  end
+end)
+
+Misc:AddSwitch("Hide All Frames", function(p65)
+  for key31, value64 in pairs(replicatedStorage:GetChildren()) do
+    if value64.Name:match("Frame$") then
+      value64.Visible = not p65
+    end
+  end
+end)
+
+Misc:AddSwitch("Disable Trades", function(p66)
+  if p66 then
+    replicatedStorage.rEvents.tradingEvent:FireServer("disableTrading")
+  else
+    replicatedStorage.rEvents.tradingEvent:FireServer("enableTrading")
+  end
+end)
+
+Misc:AddSwitch("Block Rebirths", function()
+  local v145
+
+  v145 = hookmetamethod(game, "__namecall", function(p67, ...)
+    local v146 = { ... }
+
+    if p67.Name == "rebirthRemote" and v146[1] == "rebirthRequest" then
+      return
+    end
+
+    return v145(p67, unpack(v146))
+  end)
+end)
+
+Misc:AddSwitch("Block Trades", function()
+  replicatedStorage.rEvents.tradingEvent:FireServer("disableTrading")
+end)
+
+local misc4 = Misc
+misc4:AddLabel("----Misc 4----").TextSize = 23
+
+Misc:AddSwitch("Infinite Jump", function(p68)
+  _G.InfiniteJump = p68
+  local connect2
+
+  if p68 then
+    connect2 = nil
+
+    connect2 = userInputService.JumpRequest:Connect(function()
+      if _G.InfiniteJump then
+        players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+      else
+        connect2:Disconnect()
+      end
+    end)
+  end
+end)
+
+Misc:AddSwitch("NoClip", function(p69)
+  _G.NoClip = p69
+  local connect3
+
+  if p69 then
+    connect3 = nil
+
+    connect3 = runService.Stepped:Connect(function()
+      if _G.NoClip then
+        for key32, value65 in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+          if value65:IsA("BasePart") and value65.CanCollide then
+            value65.CanCollide = false
+          end
+        end
+      else
+        connect3:Disconnect()
+      end
+    end)
+  end
+end)
+
+Misc:AddSwitch("Spin Fortune Wheel", function(p70)
+  _G.AutoSpinWheel = p70
+
+  if p70 then
+    spawn(function()
+      while _G.AutoSpinWheel and wait(1) do
+        replicatedStorage.rEvents.openFortuneWheelRemote:InvokeServer(
+          "openFortuneWheel", replicatedStorage.fortuneWheelChances["Fortune Wheel"]
+        )
+      end
+    end)
+  end
+end)
+
+Lighting = lighting
+
+timeDropdown = Misc:AddDropdown("change time", function(p71)
+  Lighting.Brightness = 2
+  Lighting.FogEnd = 100000
+  Lighting.Ambient = Color3.fromRGB(127, 127, 127)
+
+  if p71 == "Morning" then
+    Lighting.ClockTime = 6
+    Lighting.Brightness = 2
+    Lighting.Ambient = Color3.fromRGB(200, 200, 255)
+  elseif p71 == "Noon" then
+    Lighting.ClockTime = 12
+    Lighting.Brightness = 3
+    Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+  elseif p71 == "Afternoon" then
+    Lighting.ClockTime = 16
+    Lighting.Brightness = 2.5
+    Lighting.Ambient = Color3.fromRGB(255, 220, 180)
+  elseif p71 == "Sunset" then
+    Lighting.ClockTime = 18
+    Lighting.Brightness = 2
+    Lighting.Ambient = Color3.fromRGB(255, 150, 100)
+    Lighting.FogEnd = 500
+  elseif p71 == "Nigth" then
+    Lighting.ClockTime = 20
+    Lighting.Brightness = 1.5
+    Lighting.Ambient = Color3.fromRGB(100, 100, 150)
+    Lighting.FogEnd = 800
+  elseif p71 == "Midnight" then
+    Lighting.ClockTime = 0
+    Lighting.Brightness = 1
+    Lighting.Ambient = Color3.fromRGB(50, 50, 100)
+    Lighting.FogEnd = 400
+  elseif p71 == "Dawn" then
+    Lighting.ClockTime = 4
+    Lighting.Brightness = 1.8
+    Lighting.Ambient = Color3.fromRGB(180, 180, 220)
+  elseif p71 == "Early Morning" then
+    Lighting.ClockTime = 2
+    Lighting.Brightness = 1.2
+    Lighting.Ambient = Color3.fromRGB(100, 120, 180)
+  end
+end)
+
+for index19, value66 in ipairs({
+  "Morning", "Noon", "Afternoon", "Sunset", "Night", "Midnight", "Dawn", "Early Morning",
+}) do
+  timeDropdown:Add(value66)
+end
+
+local credits = addWindow:AddTab("Credits")
+credits:AddLabel("Made By: Akimbo")
+credits:AddLabel("SLH PUBLIC")
+credits:AddLabel("StingLikeAHoly")
+credits:AddLabel("SLH Official Discord")
+
+credits:AddButton("Copy Discord Link", function()
+  if setclipboard then
+
+    game.StarterGui:SetCore("SendNotification", {
+      Title = "Link Copied!",
+      Text = "You can continue to Discord now.",
+      Duration = 3,
+    })
+  else
+    game.StarterGui:SetCore("SendNotification", {
+      Title = "Error!",
+      Text = "Clipboard not supported.",
+      Duration = 3,
+    })
+  end
+end)
